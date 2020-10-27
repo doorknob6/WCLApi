@@ -209,6 +209,7 @@ class WCLApi():
         params.update({'api_key' : self.api_key})
 
         next_timestamp = -1
+        resp = ''
 
         while next_timestamp != 0:
 
@@ -230,13 +231,14 @@ class WCLApi():
                     next_timestamp = 0
             else:
                 break
+        
+        if resp:
+            if resp.status_code == 200:
+                self.save_query('events', argspec, cont)
+                return cont
 
-        if resp.status_code == 200:
-            self.save_query('events', argspec, cont)
-            return cont
-
-        if resp.status_code == 401:
-            raise ConnectionError("Renew authorization token.")
+            if resp.status_code == 401:
+                raise ConnectionError("Renew authorization token.")
 
         raise ConnectionError("Request failed with code {}".format(resp.status_code) +
                               " and message : {}".format(resp.content) +
@@ -304,8 +306,8 @@ class WCLApi():
 
         params = {}
 
-        if start is not None: params.update({'start_time' : start})
-        if end is not None: params.update({'end_time' : end})
+        if start_time is not None: params.update({'start_time' : start_time})
+        if end_time is not None: params.update({'end_time' : end_time})
         if hostility is not None: params.update({'hostility' : hostility})
         if by is not None: params.update({'by' : by})
         if sourceid is not None: params.update({'sourceid' : sourceid})
