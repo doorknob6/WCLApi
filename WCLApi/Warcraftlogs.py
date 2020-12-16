@@ -11,6 +11,7 @@ class WCLApi():
     """This class provides the base class for API calls."""
 
     def __init__(self, api_key,
+                 query_dir=None,
                  base_url=r'https://classic.warcraftlogs.com:443/v1/',
                  timeout=1):
         """
@@ -18,6 +19,7 @@ class WCLApi():
 
         Args:
             api_key (str): Authentication api_key.
+            query_dir (str, optional): Path to the directory where queries should be stored.
             base_url (str, optional): Base URL for calls to the API.
                 Defaults to r'https://classic.warcraftlogs.com:443/v1/'
             timeout (float, optional): Default timeout for API calls. Defaults to 1.
@@ -28,6 +30,7 @@ class WCLApi():
         """
         assert api_key is not None, "Please enter an api_key"
         self.api_key = api_key
+        self.query_dir = os.path.join(sys.path[0], 'saved_queries') if query_dir is None else query_dir
         self.http = sessions.BaseUrlSession(base_url)
         self.http.hooks['response'] = [lambda response, *args, **kwargs: response.raise_for_status()]
         retries = Retry(total=6, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
@@ -231,7 +234,7 @@ class WCLApi():
                     next_timestamp = 0
             else:
                 break
-        
+
         if resp:
             if resp.status_code == 200:
                 self.save_query('events', argspec, cont)
@@ -342,9 +345,8 @@ class WCLApi():
     def load_saved_query(self, query, argspec):
         cont = None
         f_name = self.make_file_name(argspec, query)
-        f_folder = os.path.join(sys.path[0], 'saved_queries')
-        if os.path.isdir(f_folder):
-            f_path = os.path.join(f_folder, f_name)
+        if os.path.isdir(self.query_dir):
+            f_path = os.path.join(self.query_dir, f_name)
             if os.path.isfile(f_path):
                 with open(f_path, 'r') as f:
                     cont = json.load(f)
@@ -352,10 +354,9 @@ class WCLApi():
 
     def save_query(self, query, argspec, cont):
         f_name = self.make_file_name(argspec, query)
-        f_folder = os.path.join(sys.path[0], 'saved_queries')
-        if not os.path.isdir(f_folder):
-            os.mkdir(f_folder)
-        f_path = os.path.join(f_folder, f_name)
+        if not os.path.isdir(self.query_dir):
+            os.mkdir(self.query_dir)
+        f_path = os.path.join(self.query_dir, f_name)
         with open(f_path, 'w') as f:
             json.dump(cont, f)
 
