@@ -357,6 +357,7 @@ class WCLApi():
                                server=None,
                                region=None,
                                page=None,
+                               limit=None,
                                filter=None,
                                include_combatant_info=False,
                                endpoint='rankings/encounter/:encounter_id'):
@@ -375,6 +376,7 @@ class WCLApi():
             server (str, optional): A server to filter on. If set, the region must also be specified. This is the slug field in Blizzard terminology. Defaults to None.
             region (str, optional): The short name of a region to filter on (e.g., US, NA, EU). Defaults to None.
             page (int, optional): The page to examine, starting from 1. If the value is omitted, then 1 is assumed. For example, with a page of 2 and a limit of 300, you will be fetching rankings 301-600. Defaults to None.
+            limit (int, optional): Maximum results per page, starting from 1. If the value is omitted, then 50 is assumed. Defaults to None.
             filter (str, optional): A search filter string, limiting the search to specific classes, specs, fight durations, raid sizes, etc. The format should match the string used on the public rankings pages. Defaults to None.
             include_combatant_info (bool, optional): Whether or not to include combatant info like gear and talents. Optional. Defaults to false.
 
@@ -406,6 +408,7 @@ class WCLApi():
         if server is not None: params.update({'server' : server})
         if region is not None: params.update({'region' : region})
         if page is not None: params.update({'page' : page})
+        if limit is not None: params.update({'limit' : limit})
         if filter is not None: params.update({'filter' : filter})
         if include_combatant_info is not None: params.update({'includeCombatantInfo' : include_combatant_info})
 
