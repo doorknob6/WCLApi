@@ -431,7 +431,7 @@ class WCLApi():
                 else:
                     cont = resp_json
 
-                next_page = cont['hasMorePages']
+                next_page = resp_json['hasMorePages']
 
                 params.update({'page' : resp_json['page'] + 1})
             else:
