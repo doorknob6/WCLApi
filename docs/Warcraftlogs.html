@@ -67,7 +67,10 @@ class WCLApi():
         self.http.mount(&#34;https://&#34;, adapter)
         self.http.mount(&#34;http://&#34;, adapter)
 
-    def get_guild_reports(self, server, server_region, guild_name, endpoint=r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;):
+    def get_guild_reports(self, server, server_region, guild_name,
+                          start_time=None,
+                          end_time=None,
+                          endpoint=r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;):
         &#34;&#34;&#34;
         Send a GET /reports/guild request to the API, returns the guild reports.
 
@@ -75,6 +78,8 @@ class WCLApi():
             server (str): server name for the which the guild reports are to be found.
             server_region (str): server region for the which the reports are to be found.
             guild_name (str): guild for which the reports are to be found.
+            start_time (int, optional): An optional start time. This is a UNIX timestamp but with millisecond precision. If omitted, 0 is assumed. Defaults to None.
+            end_time (int, optional): An optional end time. This is a UNIX timestamp but with millisecond precision. If omitted, the current time is assumed. Defaults to None.
             endpoint (str, optional): endpoint for the request. Defaults to r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;.
 
         Raises:
@@ -99,6 +104,8 @@ class WCLApi():
         params = {}
 
         params.update({&#39;api_key&#39; : api_key})
+        if start_time is not None: params.update({&#39;start&#39; : start_time})
+        if end_time is not None: params.update({&#39;end&#39; : end_time})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -386,6 +393,7 @@ class WCLApi():
                                server=None,
                                region=None,
                                page=None,
+                               limit=None,
                                filter=None,
                                include_combatant_info=False,
                                endpoint=&#39;rankings/encounter/:encounter_id&#39;):
@@ -404,6 +412,7 @@ class WCLApi():
             server (str, optional): A server to filter on. If set, the region must also be specified. This is the slug field in Blizzard terminology. Defaults to None.
             region (str, optional): The short name of a region to filter on (e.g., US, NA, EU). Defaults to None.
             page (int, optional): The page to examine, starting from 1. If the value is omitted, then 1 is assumed. For example, with a page of 2 and a limit of 300, you will be fetching rankings 301-600. Defaults to None.
+            limit (int, optional): Maximum results per page, starting from 1. If the value is omitted, then 50 is assumed. Defaults to None.
             filter (str, optional): A search filter string, limiting the search to specific classes, specs, fight durations, raid sizes, etc. The format should match the string used on the public rankings pages. Defaults to None.
             include_combatant_info (bool, optional): Whether or not to include combatant info like gear and talents. Optional. Defaults to false.
 
@@ -421,7 +430,7 @@ class WCLApi():
 
         headers = {}
 
-        endpoint = endpoint.replace(&#39;:encounter_id&#39;, encounter_id)
+        endpoint = endpoint.replace(&#39;:encounter_id&#39;, str(encounter_id))
 
         params = {}
 
@@ -435,19 +444,41 @@ class WCLApi():
         if server is not None: params.update({&#39;server&#39; : server})
         if region is not None: params.update({&#39;region&#39; : region})
         if page is not None: params.update({&#39;page&#39; : page})
+        if limit is not None: params.update({&#39;limit&#39; : limit})
         if filter is not None: params.update({&#39;filter&#39; : filter})
         if include_combatant_info is not None: params.update({&#39;includeCombatantInfo&#39; : include_combatant_info})
 
         params.update({&#39;api_key&#39; : api_key})
 
-        resp = self.http.get(endpoint, headers=headers, params=params)
+        resp = None
+        cont = None
+        next_page = True
 
-        if resp.status_code == 200:
-            cont = resp.json()
-            return cont
+        while next_page:
 
-        if resp.status_code == 401:
-            raise ConnectionError(&#34;Renew authorization token.&#34;)
+            resp = self.http.get(endpoint, headers=headers, params=params)
+
+            if resp.status_code == 200:
+
+                resp_json = resp.json()
+
+                if cont is not None:
+                    cont[&#39;rankings&#39;] += resp_json[&#39;rankings&#39;]
+                else:
+                    cont = resp_json
+
+                next_page = resp_json[&#39;hasMorePages&#39;]
+
+                params.update({&#39;page&#39; : resp_json[&#39;page&#39;] + 1})
+            else:
+                break
+
+        if resp:
+            if resp.status_code == 200:
+                return cont
+
+            if resp.status_code == 401:
+                raise ConnectionError(&#34;Renew authorization token.&#34;)
 
         raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
                               &#34; and message : {}&#34;.format(resp.content) +
@@ -547,7 +578,10 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         self.http.mount(&#34;https://&#34;, adapter)
         self.http.mount(&#34;http://&#34;, adapter)
 
-    def get_guild_reports(self, server, server_region, guild_name, endpoint=r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;):
+    def get_guild_reports(self, server, server_region, guild_name,
+                          start_time=None,
+                          end_time=None,
+                          endpoint=r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;):
         &#34;&#34;&#34;
         Send a GET /reports/guild request to the API, returns the guild reports.
 
@@ -555,6 +589,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
             server (str): server name for the which the guild reports are to be found.
             server_region (str): server region for the which the reports are to be found.
             guild_name (str): guild for which the reports are to be found.
+            start_time (int, optional): An optional start time. This is a UNIX timestamp but with millisecond precision. If omitted, 0 is assumed. Defaults to None.
+            end_time (int, optional): An optional end time. This is a UNIX timestamp but with millisecond precision. If omitted, the current time is assumed. Defaults to None.
             endpoint (str, optional): endpoint for the request. Defaults to r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;.
 
         Raises:
@@ -579,6 +615,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         params = {}
 
         params.update({&#39;api_key&#39; : api_key})
+        if start_time is not None: params.update({&#39;start&#39; : start_time})
+        if end_time is not None: params.update({&#39;end&#39; : end_time})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -866,6 +904,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
                                server=None,
                                region=None,
                                page=None,
+                               limit=None,
                                filter=None,
                                include_combatant_info=False,
                                endpoint=&#39;rankings/encounter/:encounter_id&#39;):
@@ -884,6 +923,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
             server (str, optional): A server to filter on. If set, the region must also be specified. This is the slug field in Blizzard terminology. Defaults to None.
             region (str, optional): The short name of a region to filter on (e.g., US, NA, EU). Defaults to None.
             page (int, optional): The page to examine, starting from 1. If the value is omitted, then 1 is assumed. For example, with a page of 2 and a limit of 300, you will be fetching rankings 301-600. Defaults to None.
+            limit (int, optional): Maximum results per page, starting from 1. If the value is omitted, then 50 is assumed. Defaults to None.
             filter (str, optional): A search filter string, limiting the search to specific classes, specs, fight durations, raid sizes, etc. The format should match the string used on the public rankings pages. Defaults to None.
             include_combatant_info (bool, optional): Whether or not to include combatant info like gear and talents. Optional. Defaults to false.
 
@@ -901,7 +941,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
         headers = {}
 
-        endpoint = endpoint.replace(&#39;:encounter_id&#39;, encounter_id)
+        endpoint = endpoint.replace(&#39;:encounter_id&#39;, str(encounter_id))
 
         params = {}
 
@@ -915,19 +955,41 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         if server is not None: params.update({&#39;server&#39; : server})
         if region is not None: params.update({&#39;region&#39; : region})
         if page is not None: params.update({&#39;page&#39; : page})
+        if limit is not None: params.update({&#39;limit&#39; : limit})
         if filter is not None: params.update({&#39;filter&#39; : filter})
         if include_combatant_info is not None: params.update({&#39;includeCombatantInfo&#39; : include_combatant_info})
 
         params.update({&#39;api_key&#39; : api_key})
 
-        resp = self.http.get(endpoint, headers=headers, params=params)
+        resp = None
+        cont = None
+        next_page = True
 
-        if resp.status_code == 200:
-            cont = resp.json()
-            return cont
+        while next_page:
 
-        if resp.status_code == 401:
-            raise ConnectionError(&#34;Renew authorization token.&#34;)
+            resp = self.http.get(endpoint, headers=headers, params=params)
+
+            if resp.status_code == 200:
+
+                resp_json = resp.json()
+
+                if cont is not None:
+                    cont[&#39;rankings&#39;] += resp_json[&#39;rankings&#39;]
+                else:
+                    cont = resp_json
+
+                next_page = resp_json[&#39;hasMorePages&#39;]
+
+                params.update({&#39;page&#39; : resp_json[&#39;page&#39;] + 1})
+            else:
+                break
+
+        if resp:
+            if resp.status_code == 200:
+                return cont
+
+            if resp.status_code == 401:
+                raise ConnectionError(&#34;Renew authorization token.&#34;)
 
         raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
                               &#34; and message : {}&#34;.format(resp.content) +
@@ -964,7 +1026,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 <h3>Methods</h3>
 <dl>
 <dt id="WCLApi.Warcraftlogs.WCLApi.get_encounter_rankings"><code class="name flex">
-<span>def <span class="ident">get_encounter_rankings</span></span>(<span>self, encounter_id, metric='speed', size=None, difficulty=None, partition=None, game_class=None, spec=None, bracket=None, server=None, region=None, page=None, filter=None, include_combatant_info=False, endpoint='rankings/encounter/:encounter_id')</span>
+<span>def <span class="ident">get_encounter_rankings</span></span>(<span>self, encounter_id, metric='speed', size=None, difficulty=None, partition=None, game_class=None, spec=None, bracket=None, server=None, region=None, page=None, limit=None, filter=None, include_combatant_info=False, endpoint='rankings/encounter/:encounter_id')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Send a GET /rankings/encounter request to the API, returns the encounter rankings.</p>
@@ -992,6 +1054,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 <dd>The short name of a region to filter on (e.g., US, NA, EU). Defaults to None.</dd>
 <dt><strong><code>page</code></strong> :&ensp;<code>int</code>, optional</dt>
 <dd>The page to examine, starting from 1. If the value is omitted, then 1 is assumed. For example, with a page of 2 and a limit of 300, you will be fetching rankings 301-600. Defaults to None.</dd>
+<dt><strong><code>limit</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Maximum results per page, starting from 1. If the value is omitted, then 50 is assumed. Defaults to None.</dd>
 <dt><strong><code>filter</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd>A search filter string, limiting the search to specific classes, specs, fight durations, raid sizes, etc. The format should match the string used on the public rankings pages. Defaults to None.</dd>
 <dt><strong><code>include_combatant_info</code></strong> :&ensp;<code>bool</code>, optional</dt>
@@ -1021,6 +1085,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
                            server=None,
                            region=None,
                            page=None,
+                           limit=None,
                            filter=None,
                            include_combatant_info=False,
                            endpoint=&#39;rankings/encounter/:encounter_id&#39;):
@@ -1039,6 +1104,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         server (str, optional): A server to filter on. If set, the region must also be specified. This is the slug field in Blizzard terminology. Defaults to None.
         region (str, optional): The short name of a region to filter on (e.g., US, NA, EU). Defaults to None.
         page (int, optional): The page to examine, starting from 1. If the value is omitted, then 1 is assumed. For example, with a page of 2 and a limit of 300, you will be fetching rankings 301-600. Defaults to None.
+        limit (int, optional): Maximum results per page, starting from 1. If the value is omitted, then 50 is assumed. Defaults to None.
         filter (str, optional): A search filter string, limiting the search to specific classes, specs, fight durations, raid sizes, etc. The format should match the string used on the public rankings pages. Defaults to None.
         include_combatant_info (bool, optional): Whether or not to include combatant info like gear and talents. Optional. Defaults to false.
 
@@ -1056,7 +1122,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
     headers = {}
 
-    endpoint = endpoint.replace(&#39;:encounter_id&#39;, encounter_id)
+    endpoint = endpoint.replace(&#39;:encounter_id&#39;, str(encounter_id))
 
     params = {}
 
@@ -1070,19 +1136,41 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
     if server is not None: params.update({&#39;server&#39; : server})
     if region is not None: params.update({&#39;region&#39; : region})
     if page is not None: params.update({&#39;page&#39; : page})
+    if limit is not None: params.update({&#39;limit&#39; : limit})
     if filter is not None: params.update({&#39;filter&#39; : filter})
     if include_combatant_info is not None: params.update({&#39;includeCombatantInfo&#39; : include_combatant_info})
 
     params.update({&#39;api_key&#39; : api_key})
 
-    resp = self.http.get(endpoint, headers=headers, params=params)
+    resp = None
+    cont = None
+    next_page = True
 
-    if resp.status_code == 200:
-        cont = resp.json()
-        return cont
+    while next_page:
 
-    if resp.status_code == 401:
-        raise ConnectionError(&#34;Renew authorization token.&#34;)
+        resp = self.http.get(endpoint, headers=headers, params=params)
+
+        if resp.status_code == 200:
+
+            resp_json = resp.json()
+
+            if cont is not None:
+                cont[&#39;rankings&#39;] += resp_json[&#39;rankings&#39;]
+            else:
+                cont = resp_json
+
+            next_page = resp_json[&#39;hasMorePages&#39;]
+
+            params.update({&#39;page&#39; : resp_json[&#39;page&#39;] + 1})
+        else:
+            break
+
+    if resp:
+        if resp.status_code == 200:
+            return cont
+
+        if resp.status_code == 401:
+            raise ConnectionError(&#34;Renew authorization token.&#34;)
 
     raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
                           &#34; and message : {}&#34;.format(resp.content) +
@@ -1090,7 +1178,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 </details>
 </dd>
 <dt id="WCLApi.Warcraftlogs.WCLApi.get_guild_reports"><code class="name flex">
-<span>def <span class="ident">get_guild_reports</span></span>(<span>self, server, server_region, guild_name, endpoint='reports/guild/:guildName/:serverName/:serverRegion')</span>
+<span>def <span class="ident">get_guild_reports</span></span>(<span>self, server, server_region, guild_name, start_time=None, end_time=None, endpoint='reports/guild/:guildName/:serverName/:serverRegion')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Send a GET /reports/guild request to the API, returns the guild reports.</p>
@@ -1102,6 +1190,10 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 <dd>server region for the which the reports are to be found.</dd>
 <dt><strong><code>guild_name</code></strong> :&ensp;<code>str</code></dt>
 <dd>guild for which the reports are to be found.</dd>
+<dt><strong><code>start_time</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>An optional start time. This is a UNIX timestamp but with millisecond precision. If omitted, 0 is assumed. Defaults to None.</dd>
+<dt><strong><code>end_time</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>An optional end time. This is a UNIX timestamp but with millisecond precision. If omitted, the current time is assumed. Defaults to None.</dd>
 <dt><strong><code>endpoint</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd>endpoint for the request. Defaults to r'reports/guild/:guildName/:serverName/:serverRegion'.</dd>
 </dl>
@@ -1118,7 +1210,10 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_guild_reports(self, server, server_region, guild_name, endpoint=r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;):
+<pre><code class="python">def get_guild_reports(self, server, server_region, guild_name,
+                      start_time=None,
+                      end_time=None,
+                      endpoint=r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;):
     &#34;&#34;&#34;
     Send a GET /reports/guild request to the API, returns the guild reports.
 
@@ -1126,6 +1221,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         server (str): server name for the which the guild reports are to be found.
         server_region (str): server region for the which the reports are to be found.
         guild_name (str): guild for which the reports are to be found.
+        start_time (int, optional): An optional start time. This is a UNIX timestamp but with millisecond precision. If omitted, 0 is assumed. Defaults to None.
+        end_time (int, optional): An optional end time. This is a UNIX timestamp but with millisecond precision. If omitted, the current time is assumed. Defaults to None.
         endpoint (str, optional): endpoint for the request. Defaults to r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;.
 
     Raises:
@@ -1150,6 +1247,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
     params = {}
 
     params.update({&#39;api_key&#39; : api_key})
+    if start_time is not None: params.update({&#39;start&#39; : start_time})
+    if end_time is not None: params.update({&#39;end&#39; : end_time})
 
     resp = self.http.get(endpoint, headers=headers, params=params)
 

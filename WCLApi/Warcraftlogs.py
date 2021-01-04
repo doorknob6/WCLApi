@@ -38,7 +38,10 @@ class WCLApi():
         self.http.mount("https://", adapter)
         self.http.mount("http://", adapter)
 
-    def get_guild_reports(self, server, server_region, guild_name, endpoint=r'reports/guild/:guildName/:serverName/:serverRegion'):
+    def get_guild_reports(self, server, server_region, guild_name,
+                          start_time=None,
+                          end_time=None,
+                          endpoint=r'reports/guild/:guildName/:serverName/:serverRegion'):
         """
         Send a GET /reports/guild request to the API, returns the guild reports.
 
@@ -46,6 +49,8 @@ class WCLApi():
             server (str): server name for the which the guild reports are to be found.
             server_region (str): server region for the which the reports are to be found.
             guild_name (str): guild for which the reports are to be found.
+            start_time (int, optional): An optional start time. This is a UNIX timestamp but with millisecond precision. If omitted, 0 is assumed. Defaults to None.
+            end_time (int, optional): An optional end time. This is a UNIX timestamp but with millisecond precision. If omitted, the current time is assumed. Defaults to None.
             endpoint (str, optional): endpoint for the request. Defaults to r'reports/guild/:guildName/:serverName/:serverRegion'.
 
         Raises:
@@ -70,6 +75,8 @@ class WCLApi():
         params = {}
 
         params.update({'api_key' : api_key})
+        if start_time is not None: params.update({'start' : start_time})
+        if end_time is not None: params.update({'end' : end_time})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
