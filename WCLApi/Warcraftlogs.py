@@ -414,14 +414,35 @@ class WCLApi():
 
         params.update({'api_key' : api_key})
 
-        resp = self.http.get(endpoint, headers=headers, params=params)
+        resp = None
+        cont = None
+        next_page = True
 
-        if resp.status_code == 200:
-            cont = resp.json()
-            return cont
+        while next_page:
 
-        if resp.status_code == 401:
-            raise ConnectionError("Renew authorization token.")
+            resp = self.http.get(endpoint, headers=headers, params=params)
+
+            if resp.status_code == 200:
+
+                resp_json = resp.json()
+
+                if cont is not None:
+                    cont['rankings'] += resp_json['rankings']
+                else:
+                    cont = resp_json
+
+                next_page = cont['hasMorePages']
+
+                params.update({'page' : resp_json['page'] + 1})
+            else:
+                break
+
+        if resp:
+            if resp.status_code == 200:
+                return cont
+
+            if resp.status_code == 401:
+                raise ConnectionError("Renew authorization token.")
 
         raise ConnectionError("Request failed with code {}".format(resp.status_code) +
                               " and message : {}".format(resp.content) +
