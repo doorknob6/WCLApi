@@ -49,6 +49,7 @@ class WCLApi():
             endpoint (str, optional): endpoint for the request. Defaults to r'reports/guild/:guildName/:serverName/:serverRegion'.
 
         Raises:
+            ValueError: If the Api class is not initialized prior to execution.
             ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
 
         Returns:
@@ -68,7 +69,7 @@ class WCLApi():
 
         params = {}
 
-        params.update({'api_key' : self.api_key})
+        params.update({'api_key' : api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -92,6 +93,7 @@ class WCLApi():
             endpoint (str, optional): endpoint for the request. Defaults to r'report/fights/:report_code'.
 
         Raises:
+            ValueError: If the Api class is not initialized prior to execution.
             ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
 
         Returns:
@@ -108,7 +110,7 @@ class WCLApi():
 
         params = {}
 
-        params.update({'api_key' : self.api_key})
+        params.update({'api_key' : api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -168,6 +170,7 @@ class WCLApi():
             endpoint (str, optional): endpoint for the request. Defaults to r'report/events/:view/:report_code'.
 
         Raises:
+            ValueError: If the Api class is not initialized prior to execution.
             ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
 
         Returns:
@@ -209,7 +212,7 @@ class WCLApi():
         if filter_exp is not None: params.update({'filter' : filter_exp})
         if translate is not None: params.update({'translate' : translate})
 
-        params.update({'api_key' : self.api_key})
+        params.update({'api_key' : api_key})
 
         next_timestamp = -1
         resp = ''
@@ -292,6 +295,7 @@ class WCLApi():
             endpoint (str, optional): endpoint for the request. Defaults to r'report/tables/:view/:report_code'.
 
         Raises:
+            ValueError: If the Api class is not initialized prior to execution.
             ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
 
         Returns:
@@ -327,7 +331,85 @@ class WCLApi():
         if filter_exp is not None: params.update({'filter' : filter_exp})
         if translate is not None: params.update({'translate' : translate})
 
-        params.update({'api_key' : self.api_key})
+        params.update({'api_key' : api_key})
+
+        resp = self.http.get(endpoint, headers=headers, params=params)
+
+        if resp.status_code == 200:
+            cont = resp.json()
+            return cont
+
+        if resp.status_code == 401:
+            raise ConnectionError("Renew authorization token.")
+
+        raise ConnectionError("Request failed with code {}".format(resp.status_code) +
+                              " and message : {}".format(resp.content) +
+                              " for endpoint: {}".format(endpoint))
+
+    def get_encounter_rankings(self, encounter_id,
+                               metric='speed',
+                               size=None,
+                               difficulty=None,
+                               partition=None,
+                               class=None,
+                               spec=None,
+                               bracket=None,
+                               server=None,
+                               region=None,
+                               page=None,
+                               filter=None,
+                               include_combatant_info=False,
+                               endpoint='rankings/encounter/:encounter_id'):
+        """
+        Send a GET /rankings/encounter request to the API, returns the encounter rankings.
+
+        Args:
+            encounter_id (int): The encounter to collect rankings for. Encounter IDs can be obtained using a /zones request.
+            metric (str, optional): The metric to query for. Valid fight metrics are 'speed', 'execution' and 'feats'. Valid character metrics are 'dps', 'hps', 'bossdps, 'tankhps', or 'playerspeed'. For WoW only, 'krsi' can be used for tank survivability ranks and 'progress' can be used for guild progress info. Defaults to 'speed'.
+            size (str, optional): The raid size to query for. This is only valid for fixed size raids. Raids with flexible sizing must omit this parameter. Defaults to None.
+            difficulty (str, optional): The difficulty setting to query for. Valid difficulty settings are 1 = LFR, 2 = Flex, 3 = Normal, 4 = Heroic, 5 = Mythic, 10 = Challenge Mode, 100 = WildStar/FF. Can be omitted for encounters with only one difficulty setting. Defaults to None.
+            partition (int, optional): The partition group to query for. Most zones have only one partition, and this can be omitted. Hellfire Citadel has two partitions (1 for original, 2 for pre-patch). Highmaul and BRF have two partitions (1 for US/EU, 2 for Asia). Defaults to None.
+            class (int, optional): The class to query for if a character metric is specified. Valid class IDs can be obtained from a /classes API request. Defaults to None.
+            spec (int, optional): The spec to query for if a character metric is specified. Valid spec IDs can be obtained from a /classes API request. Defaults to None.
+            bracket (int, optional): The bracket to query for. If omitted or if a value of 0 is specified, then all brackets are examined. Brackets can be obtained from a /zones API request. Defaults to None.
+            server (str, optional): A server to filter on. If set, the region must also be specified. This is the slug field in Blizzard terminology. Defaults to None.
+            region (str, optional): The short name of a region to filter on (e.g., US, NA, EU). Defaults to None.
+            page (int, optional): The page to examine, starting from 1. If the value is omitted, then 1 is assumed. For example, with a page of 2 and a limit of 300, you will be fetching rankings 301-600. Defaults to None.
+            filter (str, optional): A search filter string, limiting the search to specific classes, specs, fight durations, raid sizes, etc. The format should match the string used on the public rankings pages. Defaults to None.
+            include_combatant_info (bool, optional): Whether or not to include combatant info like gear and talents. Optional. Defaults to false.
+
+        Raises:
+            ValueError: If the Api class is not initialized prior to execution.
+            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+
+        Returns:
+            dict(JsonApiObject): JsonApi object in the form of a dict.
+        """
+        try:
+            api_key = self.api_key
+        except AttributeError:
+            raise ValueError("Please initialise the Api class.")
+
+        headers = {}
+
+        endpoint = endpoint.replace(':encounter_id', encounter_id)
+
+        params = {}
+
+        if metric is not None: params.update({'metric' : metric})
+        if size is not None: params.update({'size' : size})
+        if difficulty is not None: params.update({'difficulty' : difficulty})
+        if partition is not None: params.update({'partition' : partition})
+        if class is not None: params.update({'class' : class})
+        if spec is not None: params.update({'spec' : spec})
+        if bracket is not None: params.update({'bracket' : bracket})
+        if server is not None: params.update({'server' : server})
+        if region is not None: params.update({'region' : region})
+        if page is not None: params.update({'page' : page})
+        if filter is not None: params.update({'filter' : filter})
+        if include_combatant_info is not None: params.update({'include_combatant_info' : include_combatant_info})
+
+        params.update({'api_key' : api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
