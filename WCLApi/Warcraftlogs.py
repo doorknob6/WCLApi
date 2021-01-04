@@ -351,7 +351,7 @@ class WCLApi():
                                size=None,
                                difficulty=None,
                                partition=None,
-                               class=None,
+                               game_class=None,
                                spec=None,
                                bracket=None,
                                server=None,
@@ -369,7 +369,7 @@ class WCLApi():
             size (str, optional): The raid size to query for. This is only valid for fixed size raids. Raids with flexible sizing must omit this parameter. Defaults to None.
             difficulty (str, optional): The difficulty setting to query for. Valid difficulty settings are 1 = LFR, 2 = Flex, 3 = Normal, 4 = Heroic, 5 = Mythic, 10 = Challenge Mode, 100 = WildStar/FF. Can be omitted for encounters with only one difficulty setting. Defaults to None.
             partition (int, optional): The partition group to query for. Most zones have only one partition, and this can be omitted. Hellfire Citadel has two partitions (1 for original, 2 for pre-patch). Highmaul and BRF have two partitions (1 for US/EU, 2 for Asia). Defaults to None.
-            class (int, optional): The class to query for if a character metric is specified. Valid class IDs can be obtained from a /classes API request. Defaults to None.
+            game_class (int, optional): The class to query for if a character metric is specified. Valid class IDs can be obtained from a /classes API request. Defaults to None.
             spec (int, optional): The spec to query for if a character metric is specified. Valid spec IDs can be obtained from a /classes API request. Defaults to None.
             bracket (int, optional): The bracket to query for. If omitted or if a value of 0 is specified, then all brackets are examined. Brackets can be obtained from a /zones API request. Defaults to None.
             server (str, optional): A server to filter on. If set, the region must also be specified. This is the slug field in Blizzard terminology. Defaults to None.
@@ -400,14 +400,14 @@ class WCLApi():
         if size is not None: params.update({'size' : size})
         if difficulty is not None: params.update({'difficulty' : difficulty})
         if partition is not None: params.update({'partition' : partition})
-        if class is not None: params.update({'class' : class})
+        if game_class is not None: params.update({'class' : game_class})
         if spec is not None: params.update({'spec' : spec})
         if bracket is not None: params.update({'bracket' : bracket})
         if server is not None: params.update({'server' : server})
         if region is not None: params.update({'region' : region})
         if page is not None: params.update({'page' : page})
         if filter is not None: params.update({'filter' : filter})
-        if include_combatant_info is not None: params.update({'include_combatant_info' : include_combatant_info})
+        if include_combatant_info is not None: params.update({'includeCombatantInfo' : include_combatant_info})
 
         params.update({'api_key' : api_key})
 
