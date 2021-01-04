@@ -394,7 +394,7 @@ class WCLApi():
 
         headers = {}
 
-        endpoint = endpoint.replace(':encounter_id', encounter_id)
+        endpoint = endpoint.replace(':encounter_id', str(encounter_id))
 
         params = {}
 
