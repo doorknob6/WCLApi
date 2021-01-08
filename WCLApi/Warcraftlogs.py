@@ -455,6 +455,45 @@ class WCLApi():
                               " and message : {}".format(resp.content) +
                               " for endpoint: {}".format(endpoint))
 
+    def get_zones(self, endpoint=r'/zones'):
+        """
+        Send a /zones request to the API, returns the available zones.
+
+        Args:
+            endpoint (str, optional): API Endpoint. Defaults to r'/zones'.
+
+        Raises:
+            ValueError: If the Api class is not initialized prior to execution.
+            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+
+        Returns:
+            dict(JsonApiObject): JsonApi object in the form of a dict.
+        """
+        try:
+            api_key = self.api_key
+        except AttributeError:
+            raise ValueError("Please initialise the Api class.")
+
+        headers = {}
+
+        resp = None
+        cont = None
+
+        params = {}
+
+        resp = self.http.get(endpoint, headers=headers, params=params)
+
+        if resp.status_code == 200:
+            cont = resp.json()
+            return cont
+
+        if resp.status_code == 401:
+            raise ConnectionError("Renew authorization token.")
+
+        raise ConnectionError("Request failed with code {}".format(resp.status_code) +
+                              " and message : {}".format(resp.content) +
+                              " for endpoint: {}".format(endpoint))
+
     def load_saved_query(self, query, argspec):
         cont = None
         f_name = self.make_file_name(argspec, query)

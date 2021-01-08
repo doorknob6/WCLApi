@@ -484,6 +484,45 @@ class WCLApi():
                               &#34; and message : {}&#34;.format(resp.content) +
                               &#34; for endpoint: {}&#34;.format(endpoint))
 
+    def get_zones(self, endpoint=r&#39;/zones&#39;):
+        &#34;&#34;&#34;
+        Send a /zones request to the API, returns the available zones.
+
+        Args:
+            endpoint (str, optional): API Endpoint. Defaults to r&#39;/zones&#39;.
+
+        Raises:
+            ValueError: If the Api class is not initialized prior to execution.
+            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+
+        Returns:
+            dict(JsonApiObject): JsonApi object in the form of a dict.
+        &#34;&#34;&#34;
+        try:
+            api_key = self.api_key
+        except AttributeError:
+            raise ValueError(&#34;Please initialise the Api class.&#34;)
+
+        headers = {}
+
+        resp = None
+        cont = None
+
+        params = {}
+
+        resp = self.http.get(endpoint, headers=headers, params=params)
+
+        if resp.status_code == 200:
+            cont = resp.json()
+            return cont
+
+        if resp.status_code == 401:
+            raise ConnectionError(&#34;Renew authorization token.&#34;)
+
+        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
+                              &#34; and message : {}&#34;.format(resp.content) +
+                              &#34; for endpoint: {}&#34;.format(endpoint))
+
     def load_saved_query(self, query, argspec):
         cont = None
         f_name = self.make_file_name(argspec, query)
@@ -990,6 +1029,45 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
             if resp.status_code == 401:
                 raise ConnectionError(&#34;Renew authorization token.&#34;)
+
+        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
+                              &#34; and message : {}&#34;.format(resp.content) +
+                              &#34; for endpoint: {}&#34;.format(endpoint))
+
+    def get_zones(self, endpoint=r&#39;/zones&#39;):
+        &#34;&#34;&#34;
+        Send a /zones request to the API, returns the available zones.
+
+        Args:
+            endpoint (str, optional): API Endpoint. Defaults to r&#39;/zones&#39;.
+
+        Raises:
+            ValueError: If the Api class is not initialized prior to execution.
+            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+
+        Returns:
+            dict(JsonApiObject): JsonApi object in the form of a dict.
+        &#34;&#34;&#34;
+        try:
+            api_key = self.api_key
+        except AttributeError:
+            raise ValueError(&#34;Please initialise the Api class.&#34;)
+
+        headers = {}
+
+        resp = None
+        cont = None
+
+        params = {}
+
+        resp = self.http.get(endpoint, headers=headers, params=params)
+
+        if resp.status_code == 200:
+            cont = resp.json()
+            return cont
+
+        if resp.status_code == 401:
+            raise ConnectionError(&#34;Renew authorization token.&#34;)
 
         raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
                               &#34; and message : {}&#34;.format(resp.content) +
@@ -1676,6 +1754,69 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
                           &#34; for endpoint: {}&#34;.format(endpoint))</code></pre>
 </details>
 </dd>
+<dt id="WCLApi.Warcraftlogs.WCLApi.get_zones"><code class="name flex">
+<span>def <span class="ident">get_zones</span></span>(<span>self, endpoint='/zones')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Send a /zones request to the API, returns the available zones.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>endpoint</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>API Endpoint. Defaults to r'/zones'.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>If the Api class is not initialized prior to execution.</dd>
+<dt><code>ConnectionError</code></dt>
+<dd>Different Connectionerrors based on retrieved ApiErrors.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>dict(JsonApiObject): JsonApi object in the form of a dict.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_zones(self, endpoint=r&#39;/zones&#39;):
+    &#34;&#34;&#34;
+    Send a /zones request to the API, returns the available zones.
+
+    Args:
+        endpoint (str, optional): API Endpoint. Defaults to r&#39;/zones&#39;.
+
+    Raises:
+        ValueError: If the Api class is not initialized prior to execution.
+        ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+
+    Returns:
+        dict(JsonApiObject): JsonApi object in the form of a dict.
+    &#34;&#34;&#34;
+    try:
+        api_key = self.api_key
+    except AttributeError:
+        raise ValueError(&#34;Please initialise the Api class.&#34;)
+
+    headers = {}
+
+    resp = None
+    cont = None
+
+    params = {}
+
+    resp = self.http.get(endpoint, headers=headers, params=params)
+
+    if resp.status_code == 200:
+        cont = resp.json()
+        return cont
+
+    if resp.status_code == 401:
+        raise ConnectionError(&#34;Renew authorization token.&#34;)
+
+    raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
+                          &#34; and message : {}&#34;.format(resp.content) +
+                          &#34; for endpoint: {}&#34;.format(endpoint))</code></pre>
+</details>
+</dd>
 <dt id="WCLApi.Warcraftlogs.WCLApi.load_saved_query"><code class="name flex">
 <span>def <span class="ident">load_saved_query</span></span>(<span>self, query, argspec)</span>
 </code></dt>
@@ -1760,6 +1901,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 <li><code><a title="WCLApi.Warcraftlogs.WCLApi.get_report_events" href="#WCLApi.Warcraftlogs.WCLApi.get_report_events">get_report_events</a></code></li>
 <li><code><a title="WCLApi.Warcraftlogs.WCLApi.get_report_fights" href="#WCLApi.Warcraftlogs.WCLApi.get_report_fights">get_report_fights</a></code></li>
 <li><code><a title="WCLApi.Warcraftlogs.WCLApi.get_report_tables" href="#WCLApi.Warcraftlogs.WCLApi.get_report_tables">get_report_tables</a></code></li>
+<li><code><a title="WCLApi.Warcraftlogs.WCLApi.get_zones" href="#WCLApi.Warcraftlogs.WCLApi.get_zones">get_zones</a></code></li>
 <li><code><a title="WCLApi.Warcraftlogs.WCLApi.load_saved_query" href="#WCLApi.Warcraftlogs.WCLApi.load_saved_query">load_saved_query</a></code></li>
 <li><code><a title="WCLApi.Warcraftlogs.WCLApi.make_file_name" href="#WCLApi.Warcraftlogs.WCLApi.make_file_name">make_file_name</a></code></li>
 <li><code><a title="WCLApi.Warcraftlogs.WCLApi.save_query" href="#WCLApi.Warcraftlogs.WCLApi.save_query">save_query</a></code></li>
