@@ -455,7 +455,7 @@ class WCLApi():
                               " and message : {}".format(resp.content) +
                               " for endpoint: {}".format(endpoint))
 
-    def get_zones(self, endpoint=r'/zones'):
+    def get_zones(self, endpoint=r'zones'):
         """
         Send a /zones request to the API, returns the available zones.
 
