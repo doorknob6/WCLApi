@@ -480,6 +480,7 @@ class WCLApi():
         cont = None
 
         params = {}
+        params.update({'api_key' : api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
