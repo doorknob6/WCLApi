@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
   name = 'WCLApi',
   packages = ['WCLApi'],
-  version = '0.3.7',
+  version = '0.3.8',
   license='MIT',
   description = 'Python tools to communicate with the Wacraftlogs website API.',
   author = 'doorknob6',

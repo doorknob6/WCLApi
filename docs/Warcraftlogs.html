@@ -349,8 +349,8 @@ class WCLApi():
 
         params = {}
 
-        if start_time is not None: params.update({&#39;start_time&#39; : start_time})
-        if end_time is not None: params.update({&#39;end_time&#39; : end_time})
+        if start_time is not None: params.update({&#39;start&#39; : start_time})
+        if end_time is not None: params.update({&#39;end&#39; : end_time})
         if hostility is not None: params.update({&#39;hostility&#39; : hostility})
         if by is not None: params.update({&#39;by&#39; : by})
         if sourceid is not None: params.update({&#39;sourceid&#39; : sourceid})
@@ -484,7 +484,7 @@ class WCLApi():
                               &#34; and message : {}&#34;.format(resp.content) +
                               &#34; for endpoint: {}&#34;.format(endpoint))
 
-    def get_zones(self, endpoint=r&#39;/zones&#39;):
+    def get_zones(self, endpoint=r&#39;zones&#39;):
         &#34;&#34;&#34;
         Send a /zones request to the API, returns the available zones.
 
@@ -509,6 +509,7 @@ class WCLApi():
         cont = None
 
         params = {}
+        params.update({&#39;api_key&#39; : api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -899,8 +900,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
         params = {}
 
-        if start_time is not None: params.update({&#39;start_time&#39; : start_time})
-        if end_time is not None: params.update({&#39;end_time&#39; : end_time})
+        if start_time is not None: params.update({&#39;start&#39; : start_time})
+        if end_time is not None: params.update({&#39;end&#39; : end_time})
         if hostility is not None: params.update({&#39;hostility&#39; : hostility})
         if by is not None: params.update({&#39;by&#39; : by})
         if sourceid is not None: params.update({&#39;sourceid&#39; : sourceid})
@@ -1034,7 +1035,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
                               &#34; and message : {}&#34;.format(resp.content) +
                               &#34; for endpoint: {}&#34;.format(endpoint))
 
-    def get_zones(self, endpoint=r&#39;/zones&#39;):
+    def get_zones(self, endpoint=r&#39;zones&#39;):
         &#34;&#34;&#34;
         Send a /zones request to the API, returns the available zones.
 
@@ -1059,6 +1060,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         cont = None
 
         params = {}
+        params.update({&#39;api_key&#39; : api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -1720,8 +1722,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
     params = {}
 
-    if start_time is not None: params.update({&#39;start_time&#39; : start_time})
-    if end_time is not None: params.update({&#39;end_time&#39; : end_time})
+    if start_time is not None: params.update({&#39;start&#39; : start_time})
+    if end_time is not None: params.update({&#39;end&#39; : end_time})
     if hostility is not None: params.update({&#39;hostility&#39; : hostility})
     if by is not None: params.update({&#39;by&#39; : by})
     if sourceid is not None: params.update({&#39;sourceid&#39; : sourceid})
@@ -1755,7 +1757,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 </details>
 </dd>
 <dt id="WCLApi.Warcraftlogs.WCLApi.get_zones"><code class="name flex">
-<span>def <span class="ident">get_zones</span></span>(<span>self, endpoint='/zones')</span>
+<span>def <span class="ident">get_zones</span></span>(<span>self, endpoint='zones')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Send a /zones request to the API, returns the available zones.</p>
@@ -1777,7 +1779,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_zones(self, endpoint=r&#39;/zones&#39;):
+<pre><code class="python">def get_zones(self, endpoint=r&#39;zones&#39;):
     &#34;&#34;&#34;
     Send a /zones request to the API, returns the available zones.
 
@@ -1802,6 +1804,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
     cont = None
 
     params = {}
+    params.update({&#39;api_key&#39; : api_key})
 
     resp = self.http.get(endpoint, headers=headers, params=params)
 

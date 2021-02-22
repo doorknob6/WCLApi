@@ -320,8 +320,8 @@ class WCLApi():
 
         params = {}
 
-        if start_time is not None: params.update({'start_time' : start_time})
-        if end_time is not None: params.update({'end_time' : end_time})
+        if start_time is not None: params.update({'start' : start_time})
+        if end_time is not None: params.update({'end' : end_time})
         if hostility is not None: params.update({'hostility' : hostility})
         if by is not None: params.update({'by' : by})
         if sourceid is not None: params.update({'sourceid' : sourceid})
