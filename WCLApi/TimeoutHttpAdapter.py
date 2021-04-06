@@ -1,5 +1,8 @@
 """Module containing the timeout http adapter for this package."""
+import logging
 from requests.adapters import HTTPAdapter
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 0.5 # seconds
 
@@ -31,7 +34,7 @@ class TimeoutHttpAdapter(HTTPAdapter):
 
         Returns:
             request: with timeout attached.
-        """        ""
+        """
         timeout = kwargs.get("timeout")
         if timeout is None:
             kwargs["timeout"] = self.timeout

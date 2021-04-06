@@ -33,8 +33,12 @@ from requests_toolbelt import sessions
 from WCLApi.TimeoutHttpAdapter import TimeoutHttpAdapter
 import inspect
 import json
+import logging
 import os
 import sys
+
+logger = logging.getLogger(__name__)
+
 
 class WCLApi():
     &#34;&#34;&#34;This class provides the base class for API calls.&#34;&#34;&#34;
@@ -59,10 +63,13 @@ class WCLApi():
         &#34;&#34;&#34;
         assert api_key is not None, &#34;Please enter an api_key&#34;
         self.api_key = api_key
-        self.query_dir = os.path.join(sys.path[0], &#39;saved_queries&#39;) if query_dir is None else query_dir
+        self.query_dir = os.path.join(
+            sys.path[0], &#39;saved_queries&#39;) if query_dir is None else query_dir
         self.http = sessions.BaseUrlSession(base_url)
-        self.http.hooks[&#39;response&#39;] = [lambda response, *args, **kwargs: response.raise_for_status()]
-        retries = Retry(total=6, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+        self.http.hooks[&#39;response&#39;] = [lambda response,
+                                       *args, **kwargs: response.raise_for_status()]
+        retries = Retry(total=6, backoff_factor=1,
+                        status_forcelist=[429, 500, 502, 503, 504])
         adapter = TimeoutHttpAdapter(timeout=timeout, max_retries=retries)
         self.http.mount(&#34;https://&#34;, adapter)
         self.http.mount(&#34;http://&#34;, adapter)
@@ -75,16 +82,25 @@ class WCLApi():
         Send a GET /reports/guild request to the API, returns the guild reports.
 
         Args:
-            server (str): server name for the which the guild reports are to be found.
-            server_region (str): server region for the which the reports are to be found.
+            server (str): server name for the which the guild reports are to be
+                found.
+            server_region (str): server region for the which the reports are to
+                be found.
             guild_name (str): guild for which the reports are to be found.
-            start_time (int, optional): An optional start time. This is a UNIX timestamp but with millisecond precision. If omitted, 0 is assumed. Defaults to None.
-            end_time (int, optional): An optional end time. This is a UNIX timestamp but with millisecond precision. If omitted, the current time is assumed. Defaults to None.
-            endpoint (str, optional): endpoint for the request. Defaults to r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;.
+            start_time (int, optional): An optional start time. This is a UNIX
+                timestamp but with millisecond precision. If omitted, 0 is
+                assumed. Defaults to None.
+            end_time (int, optional): An optional end time. This is a UNIX
+                timestamp but with millisecond precision. If omitted, the
+                current time is assumed. Defaults to None.
+            endpoint (str, optional): endpoint for the request. Defaults to
+                r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;.
 
         Raises:
-            ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ValueError: If the Api class is not initialized prior to
+                execution.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -97,15 +113,19 @@ class WCLApi():
 
         headers = {}
 
-        endpoint = endpoint.replace(&#34;:serverName&#34;, server.lower().replace(&#39; &#39;, &#39;-&#39;)
+        endpoint = endpoint.replace(&#34;:serverName&#34;,
+                                    server.lower().replace(&#39; &#39;, &#39;-&#39;)
                                     ).replace(&#34;:serverRegion&#34;, server_region
-                                              ).replace(&#34;:guildName&#34;, guild_name)
+                                              ).replace(&#34;:guildName&#34;,
+                                                        guild_name)
 
         params = {}
 
-        params.update({&#39;api_key&#39; : api_key})
-        if start_time is not None: params.update({&#39;start&#39; : start_time})
-        if end_time is not None: params.update({&#39;end&#39; : end_time})
+        params.update({&#39;api_key&#39;: api_key})
+        if start_time is not None:
+            params.update({&#39;start&#39;: start_time})
+        if end_time is not None:
+            params.update({&#39;end&#39;: end_time})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -116,21 +136,26 @@ class WCLApi():
         if resp.status_code == 401:
             raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
-    def get_report_fights(self, report_code, endpoint=r&#39;report/fights/:report_code&#39;):
+    def get_report_fights(self, report_code,
+                          endpoint=r&#39;report/fights/:report_code&#39;):
         &#34;&#34;&#34;
-        Send a GET /report/fights request to the API, returns the report fights.
+        Send a GET /report/fights request to the API, returns the report
+        fights.
 
         Args:
-            report_code (str): report code for the which the fights are to be found.
-            endpoint (str, optional): endpoint for the request. Defaults to r&#39;report/fights/:report_code&#39;.
+            report_code (str): report code for the which the fights are to be
+                found.
+            endpoint (str, optional): endpoint for the request. Defaults to
+                r&#39;report/fights/:report_code&#39;.
 
         Raises:
             ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -146,7 +171,7 @@ class WCLApi():
 
         params = {}
 
-        params.update({&#39;api_key&#39; : api_key})
+        params.update({&#39;api_key&#39;: api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -157,9 +182,9 @@ class WCLApi():
         if resp.status_code == 401:
             raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
     def get_report_events(self, view, report_code,
                           start_time=None,
@@ -185,29 +210,93 @@ class WCLApi():
 
         Args:
             view (str): view for the which the events are to be found.
-            report_code (str): report code for the which the events are to be found.
-            start_time (int, optional): A start time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-            end_time (int, optional): An end time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-            hostility (int, optional): An optional hostility value of 0 or 1. The default is 0. A value of 0 means to collect data for Friendlies. A value of 1 means to collect data for Enemies. Defaults to None.
-            sourceid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the source (or target for damage-taken) of the event will be returned. The actor&#39;s pets will also be included (unless the options field overrides). Defaults to None.
-            sourceinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the source (or target for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. Defaults to None.
-            sourceclass (str, optional): An optional actor class to filter to. If set, only events where the source (or target for damage-taken) involves that class (e.g., Mage) will be returned. Defaults to None.
-            targetid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the target (or source for damage-taken) of the event will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            targetinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the target (or source for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            targetclass (str, optional): An optional actor class to filter to. If set, only events where the target (or source for damage-taken) involves that class (e.g., Mage) will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            abilityid (int, optional): An optional ability ID to filter to. If set, only events where the ability matches will be returned. Consolidated abilities (WCL only) are represented using a negative number that matches the ability ID that everything is consolidated under. For the &#39;deaths&#39; view, this represents a specific killing blow. For the resources views, the abilityid is not an ability but a resource type. Valid resource types can be viewed at https://www.warcraftlogs.com/reports/resource_types/ Defaults to None.
-            death (int, optional): An optional death to filter to. Only used for the deaths command. Select the Nth death in the time range that matches all the other filters. Defaults to None.
-            options (int, optional): A set of options for what to include/exclude. These correspond to options like Include Overkill in the Damage Done pane. Complete list will be forthcoming. If omitted, appropriate defaults that match WCL&#39;s default behavior will be chosen. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            cutoff (int, optional): An optional death cutoff. If set, events after that number of deaths have occurred will not be examined. Defaults to None.
-            encounter (int, optional): An optional encounter filter. If set to a specific encounter ID, only fights involving a specific encounter will be considered. The encounter IDs match those used in rankings/statistics. Defaults to None.
-            wipes (int, optional): An optional wipes filter. If set to 1, only wipes will be considered. Defaults to None.
-            filter_exp (str, optional): An optional filter written in WCL&#39;s expression language. Events must match the filter to be included. Defaults to None.
-            translate (bool, optional): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.onal): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.tional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.
-            endpoint (str, optional): endpoint for the request. Defaults to r&#39;report/events/:view/:report_code&#39;.
+            report_code (str): report code for the which the events are to be
+                found.
+            start_time (int, optional): A start time. This is a time from the
+                start of the report in milliseconds. If omitted, 0 is assumed.
+                Defaults to None.
+            end_time (int, optional): An end time. This is a time from the
+                start of the report in milliseconds. If omitted, 0 is assumed.
+                Defaults to None.
+            hostility (int, optional): An optional hostility value of 0 or 1.
+                The default is 0. A value of 0 means to collect data for
+                Friendlies. A value of 1 means to collect data for Enemies.
+                Defaults to None.
+            sourceid (int, optional): An optional actor ID to filter to. If
+                set, only events where the ID matches the source (or target for
+                damage-taken) of the event will be returned. The actor&#39;s pets
+                will also be included (unless the options field overrides).
+                Defaults to None.
+            sourceinstance (int, optional): An optional actor instance ID to
+                filter to. If set, only events where the instance ID matches
+                the source (or target for damage-taken) of the event will be
+                returned. This is useful to look for all events involving NPC
+                N, where N is the actor instance ID. Defaults to None.
+            sourceclass (str, optional): An optional actor class to filter to.
+                If set, only events where the source (or target for
+                damage-taken) involves that class (e.g., Mage) will be
+                returned. Defaults to None.
+            targetid (int, optional): An optional actor ID to filter to. If
+                set, only events where the ID matches the target (or source for
+                damage-taken) of the event will be returned. This value is not
+                used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+                &#39;resources-gains&#39; views. Defaults to None.
+            targetinstance (int, optional): An optional actor instance ID to
+                filter to. If set, only events where the instance ID matches
+                the target (or source for damage-taken) of the event will be
+                returned. This is useful to look for all events involving NPC
+                N, where N is the actor instance ID. This value is not used in
+                the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+                &#39;resources-gains&#39; views. Defaults to None.
+            targetclass (str, optional): An optional actor class to filter to.
+                If set, only events where the target (or source for
+                damage-taken) involves that class (e.g., Mage) will be
+                returned. This value is not used in the &#39;deaths&#39;,
+                &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views.
+                Defaults to None.
+            abilityid (int, optional): An optional ability ID to filter to. If
+                set, only events where the ability matches will be returned.
+                Consolidated abilities (WCL only) are represented using a
+                negative number that matches the ability ID that everything is
+                consolidated under. For the &#39;deaths&#39; view, this represents a
+                specific killing blow. For the resources views, the abilityid
+                is not an ability but a resource type. Valid resource types can
+                be viewed at
+                https://www.warcraftlogs.com/reports/resource_types/
+                Defaults to None.
+            death (int, optional): An optional death to filter to. Only used
+                for the deaths command. Select the Nth death in the time range
+                that matches all the other filters. Defaults to None.
+            options (int, optional): A set of options for what to
+                include/exclude. These correspond to options like Include
+                Overkill in the Damage Done pane. Complete list will be
+                forthcoming. If omitted, appropriate defaults that match WCL&#39;s
+                default behavior will be chosen. This value is not used in the
+                &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39;
+                views. Defaults to None.
+            cutoff (int, optional): An optional death cutoff. If set, events
+                after that number of deaths have occurred will not be examined.
+                Defaults to None.
+            encounter (int, optional): An optional encounter filter. If set to
+                a specific encounter ID, only fights involving a specific
+                encounter will be considered. The encounter IDs match those
+                used in rankings/statistics. Defaults to None.
+            wipes (int, optional): An optional wipes filter. If set to 1, only
+                wipes will be considered. Defaults to None.
+            filter_exp (str, optional): An optional filter written in WCL&#39;s
+                expression language. Events must match the filter to be
+                included. Defaults to None.
+            translate (bool, optional): An optional flag indicating that the
+                results should be translated into the language of the host
+                (e.g., cn.warcraftlogs.com would get Chinese results).
+                Defaults to None
+            endpoint (str, optional): endpoint for the request. Defaults to
+                r&#39;report/events/:view/:report_code&#39;.
 
         Raises:
             ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -226,29 +315,47 @@ class WCLApi():
 
         headers = {}
 
-        endpoint = endpoint.replace(&#39;:view&#39;, view).replace(&#34;:report_code&#34;, report_code)
+        endpoint = endpoint.replace(&#39;:view&#39;, view).replace(
+            &#34;:report_code&#34;, report_code)
 
         params = {}
 
-        if start_time is not None: params.update({&#39;start&#39; : start_time})
-        if end_time is not None: params.update({&#39;end&#39; : end_time})
-        if hostility is not None: params.update({&#39;hostility&#39; : hostility})
-        if sourceid is not None: params.update({&#39;sourceid&#39; : sourceid})
-        if sourceinstance is not None: params.update({&#39;sourceinstance&#39; : sourceinstance})
-        if sourceclass is not None: params.update({&#39;sourceclass&#39; : sourceclass})
-        if targetid is not None: params.update({&#39;targetid&#39; : targetid})
-        if targetinstance is not None: params.update({&#39;targetinstance&#39; : targetinstance})
-        if targetclass is not None: params.update({&#39;targetclass&#39; : targetclass})
-        if abilityid is not None: params.update({&#39;abilityid&#39; : abilityid})
-        if death is not None: params.update({&#39;death&#39; : death})
-        if options is not None: params.update({&#39;options&#39; : options})
-        if cutoff is not None: params.update({&#39;cutoff&#39; : cutoff})
-        if encounter is not None: params.update({&#39;encounter&#39; : encounter})
-        if wipes is not None: params.update({&#39;wipes&#39; : wipes})
-        if filter_exp is not None: params.update({&#39;filter&#39; : filter_exp})
-        if translate is not None: params.update({&#39;translate&#39; : translate})
+        if start_time is not None:
+            params.update({&#39;start&#39;: start_time})
+        if end_time is not None:
+            params.update({&#39;end&#39;: end_time})
+        if hostility is not None:
+            params.update({&#39;hostility&#39;: hostility})
+        if sourceid is not None:
+            params.update({&#39;sourceid&#39;: sourceid})
+        if sourceinstance is not None:
+            params.update({&#39;sourceinstance&#39;: sourceinstance})
+        if sourceclass is not None:
+            params.update({&#39;sourceclass&#39;: sourceclass})
+        if targetid is not None:
+            params.update({&#39;targetid&#39;: targetid})
+        if targetinstance is not None:
+            params.update({&#39;targetinstance&#39;: targetinstance})
+        if targetclass is not None:
+            params.update({&#39;targetclass&#39;: targetclass})
+        if abilityid is not None:
+            params.update({&#39;abilityid&#39;: abilityid})
+        if death is not None:
+            params.update({&#39;death&#39;: death})
+        if options is not None:
+            params.update({&#39;options&#39;: options})
+        if cutoff is not None:
+            params.update({&#39;cutoff&#39;: cutoff})
+        if encounter is not None:
+            params.update({&#39;encounter&#39;: encounter})
+        if wipes is not None:
+            params.update({&#39;wipes&#39;: wipes})
+        if filter_exp is not None:
+            params.update({&#39;filter&#39;: filter_exp})
+        if translate is not None:
+            params.update({&#39;translate&#39;: translate})
 
-        params.update({&#39;api_key&#39; : api_key})
+        params.update({&#39;api_key&#39;: api_key})
 
         next_timestamp = -1
         resp = &#39;&#39;
@@ -256,7 +363,7 @@ class WCLApi():
         while next_timestamp != 0:
 
             if next_timestamp &gt; 0:
-                params.update({&#39;start&#39; : next_timestamp})
+                params.update({&#39;start&#39;: next_timestamp})
 
             resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -269,6 +376,8 @@ class WCLApi():
 
                 try:
                     next_timestamp = resp_json[&#39;nextPageTimestamp&#39;]
+                    logger.info(&#34;Loaded from new timestamp: &#34;
+                                f&#34;{resp_json[&#39;nextPageTimestamp&#39;]}&#34;)
                 except KeyError:
                     next_timestamp = 0
             else:
@@ -282,9 +391,9 @@ class WCLApi():
             if resp.status_code == 401:
                 raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
     def get_report_tables(self, view, report_code,
                           start_time=None,
@@ -306,33 +415,103 @@ class WCLApi():
                           translate=None,
                           endpoint=&#39;report/tables/:view/:report_code&#39;):
         &#34;&#34;&#34;
-        Send a GET /report/tables request to the API, returns the report tables.
+        Send a GET /report/tables request to the API, returns the report
+        tables.
 
         Args:
             view (str): view for the which the tables are to be found.
-            report_code (str): report code for the which the tables are to be found.
-            start_time (int, optional): A start time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-            end_time (int, optional): An end time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-            hostility (int, optional): An optional hostility value of 0 or 1. The default is 0. A value of 0 means to collect data for Friendlies. A value of 1 means to collect data for Enemies. Defaults to None.
-            by (str, optional): An optional parameter indicating how to group entries. They can be grouped by &#39;source&#39;, by &#39;target&#39;, or by &#39;ability&#39;. This value matches WCL&#39;s default behavior if omitted. For buffs and debuffs, a value of &#39;source&#39; means auras gained by the source, and a value of &#39;target&#39; means auras cast by the source. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            sourceid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the source (or target for damage-taken) of the event will be returned. The actor&#39;s pets will also be included (unless the options field overrides). Defaults to None.
-            sourceinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the source (or target for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. Defaults to None.
-            sourceclass (str, optional): An optional actor class to filter to. If set, only events where the source (or target for damage-taken) involves that class (e.g., Mage) will be returned. Defaults to None.
-            targetid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the target (or source for damage-taken) of the event will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            targetinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the target (or source for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            targetclass (str, optional): An optional actor class to filter to. If set, only events where the target (or source for damage-taken) involves that class (e.g., Mage) will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            abilityid (int, optional): An optional ability ID to filter to. If set, only events where the ability matches will be returned. Consolidated abilities (WCL only) are represented using a negative number that matches the ability ID that everything is consolidated under. For the &#39;deaths&#39; view, this represents a specific killing blow. For the resources views, the abilityid is not an ability but a resource type. Valid resource types can be viewed at https://www.warcraftlogs.com/reports/resource_types/ Defaults to None.
-            options (int, optional): A set of options for what to include/exclude. These correspond to options like Include Overkill in the Damage Done pane. Complete list will be forthcoming. If omitted, appropriate defaults that match WCL&#39;s default behavior will be chosen. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            cutoff (int, optional): An optional death cutoff. If set, events after that number of deaths have occurred will not be examined. Defaults to None.
-            encounter (int, optional): An optional encounter filter. If set to a specific encounter ID, only fights involving a specific encounter will be considered. The encounter IDs match those used in rankings/statistics. Defaults to None.
-            wipes (int, optional): An optional wipes filter. If set to 1, only wipes will be considered. Defaults to None.
-            filter_exp (str, optional): An optional filter written in WCL&#39;s expression language. Events must match the filter to be included. Defaults to None.
-            translate (bool, optional): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.onal): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.tional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.
-            endpoint (str, optional): endpoint for the request. Defaults to r&#39;report/tables/:view/:report_code&#39;.
+            report_code (str): report code for the which the tables are to be
+                found.
+            start_time (int, optional): A start time. This is a time from the
+                start of the report in milliseconds. If omitted, 0 is assumed.
+                Defaults to None.
+            end_time (int, optional): An end time. This is a time from the
+                start of the report in milliseconds. If omitted, 0 is assumed.
+                Defaults to None.
+            hostility (int, optional): An optional hostility value of 0 or 1.
+                The default is 0. A value of 0 means to collect data for
+                Friendlies. A value of 1 means to collect data for Enemies.
+                Defaults to None.
+            by (str, optional): An optional parameter indicating how to group
+                entries. They can be grouped by &#39;source&#39;, by &#39;target&#39;, or by
+                &#39;ability&#39;. This value matches WCL&#39;s default behavior if
+                omitted. For buffs and debuffs, a value of &#39;source&#39; means auras
+                gained by the source, and a value of &#39;target&#39; means auras cast
+                by the source. This value is not used in the &#39;deaths&#39;,
+                &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views.
+                Defaults to None.
+            sourceid (int, optional): An optional actor ID to filter to. If
+                set, only events where the ID matches the source (or target for
+                damage-taken) of the event will be returned. The actor&#39;s pets
+                will also be included (unless the options field overrides).
+                Defaults to None.
+            sourceinstance (int, optional): An optional actor instance ID to
+                filter to. If set, only events where the instance ID matches
+                the source (or target for damage-taken) of the event will be
+                returned. This is useful to look for all events involving NPC
+                N, where N is the actor instance ID. Defaults to None.
+            sourceclass (str, optional): An optional actor class to filter to.
+                If set, only events where the source (or target for
+                damage-taken) involves that class (e.g., Mage) will be
+                returned. Defaults to None.
+            targetid (int, optional): An optional actor ID to filter to. If
+                set, only events where the ID matches the target (or source
+                for damage-taken) of the event will be returned. This value is
+                not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+                &#39;resources-gains&#39; views. Defaults to None.
+            targetinstance (int, optional): An optional actor instance ID to
+                filter to. If set, only events where the instance ID matches
+                the target (or source for damage-taken) of the event will be
+                returned. This is useful to look for all events involving NPC
+                N, where N is the actor instance ID. This value is not used in
+                the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+                &#39;resources-gains&#39; views. Defaults to None.
+            targetclass (str, optional): An optional actor class to filter to.
+                If set, only events where the target (or source for
+                damage-taken) involves that class (e.g., Mage) will be
+                returned. This value is not used in the &#39;deaths&#39;,
+                &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39;
+                views. Defaults to None.
+            abilityid (int, optional): An optional ability ID to filter to.
+                If set, only events where the ability matches will be
+                returned. Consolidated abilities (WCL only) are represented
+                using a negative number that matches the ability ID that
+                everything is consolidated under. For the &#39;deaths&#39; view, this
+                represents a specific killing blow. For the resources views,
+                the abilityid is not an ability but a resource type. Valid
+                resource types can be viewed at
+                https://www.warcraftlogs.com/reports/resource_types/
+                Defaults to None.
+            options (int, optional): A set of options for what to
+                include/exclude. These correspond to options like Include
+                Overkill in the Damage Done pane. Complete list will be
+                forthcoming. If omitted, appropriate defaults that match
+                WCL&#39;s default behavior will be chosen. This value is not used
+                in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+                &#39;resources-gains&#39; views. Defaults to None.
+            cutoff (int, optional): An optional death cutoff. If set, events
+                after that number of deaths have occurred will not be examined.
+                Defaults to None.
+            encounter (int, optional): An optional encounter filter. If set to
+                a specific encounter ID, only fights involving a specific
+                encounter will be considered. The encounter IDs match those
+                used in rankings/statistics. Defaults to None.
+            wipes (int, optional): An optional wipes filter. If set to 1, only
+                wipes will be considered. Defaults to None.
+            filter_exp (str, optional): An optional filter written in WCL&#39;s
+                expression language. Events must match the filter to be
+                included. Defaults to None.
+            translate (bool, optional): An optional flag indicating that the
+                results should be translated into the language of the host
+                (e.g., cn.warcraftlogs.com would get Chinese results).
+                Defaults to None
+            endpoint (str, optional): endpoint for the request.
+                Defaults to r&#39;report/tables/:view/:report_code&#39;.
 
         Raises:
             ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -345,29 +524,47 @@ class WCLApi():
 
         headers = {}
 
-        endpoint = endpoint.replace(&#39;:view&#39;, view).replace(&#34;:report_code&#34;, report_code)
+        endpoint = endpoint.replace(&#39;:view&#39;, view).replace(
+            &#34;:report_code&#34;, report_code)
 
         params = {}
 
-        if start_time is not None: params.update({&#39;start&#39; : start_time})
-        if end_time is not None: params.update({&#39;end&#39; : end_time})
-        if hostility is not None: params.update({&#39;hostility&#39; : hostility})
-        if by is not None: params.update({&#39;by&#39; : by})
-        if sourceid is not None: params.update({&#39;sourceid&#39; : sourceid})
-        if sourceinstance is not None: params.update({&#39;sourceinstance&#39; : sourceinstance})
-        if sourceclass is not None: params.update({&#39;sourceclass&#39; : sourceclass})
-        if targetid is not None: params.update({&#39;targetid&#39; : targetid})
-        if targetinstance is not None: params.update({&#39;targetinstance&#39; : targetinstance})
-        if targetclass is not None: params.update({&#39;targetclass&#39; : targetclass})
-        if abilityid is not None: params.update({&#39;abilityid&#39; : abilityid})
-        if options is not None: params.update({&#39;options&#39; : options})
-        if cutoff is not None: params.update({&#39;cutoff&#39; : cutoff})
-        if encounter is not None: params.update({&#39;encounter&#39; : encounter})
-        if wipes is not None: params.update({&#39;wipes&#39; : wipes})
-        if filter_exp is not None: params.update({&#39;filter&#39; : filter_exp})
-        if translate is not None: params.update({&#39;translate&#39; : translate})
+        if start_time is not None:
+            params.update({&#39;start&#39;: start_time})
+        if end_time is not None:
+            params.update({&#39;end&#39;: end_time})
+        if hostility is not None:
+            params.update({&#39;hostility&#39;: hostility})
+        if by is not None:
+            params.update({&#39;by&#39;: by})
+        if sourceid is not None:
+            params.update({&#39;sourceid&#39;: sourceid})
+        if sourceinstance is not None:
+            params.update({&#39;sourceinstance&#39;: sourceinstance})
+        if sourceclass is not None:
+            params.update({&#39;sourceclass&#39;: sourceclass})
+        if targetid is not None:
+            params.update({&#39;targetid&#39;: targetid})
+        if targetinstance is not None:
+            params.update({&#39;targetinstance&#39;: targetinstance})
+        if targetclass is not None:
+            params.update({&#39;targetclass&#39;: targetclass})
+        if abilityid is not None:
+            params.update({&#39;abilityid&#39;: abilityid})
+        if options is not None:
+            params.update({&#39;options&#39;: options})
+        if cutoff is not None:
+            params.update({&#39;cutoff&#39;: cutoff})
+        if encounter is not None:
+            params.update({&#39;encounter&#39;: encounter})
+        if wipes is not None:
+            params.update({&#39;wipes&#39;: wipes})
+        if filter_exp is not None:
+            params.update({&#39;filter&#39;: filter_exp})
+        if translate is not None:
+            params.update({&#39;translate&#39;: translate})
 
-        params.update({&#39;api_key&#39; : api_key})
+        params.update({&#39;api_key&#39;: api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -378,9 +575,9 @@ class WCLApi():
         if resp.status_code == 401:
             raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
     def get_encounter_rankings(self, encounter_id,
                                metric=&#39;speed&#39;,
@@ -398,27 +595,64 @@ class WCLApi():
                                include_combatant_info=False,
                                endpoint=&#39;rankings/encounter/:encounter_id&#39;):
         &#34;&#34;&#34;
-        Send a GET /rankings/encounter request to the API, returns the encounter rankings.
+        Send a GET /rankings/encounter request to the API, returns the
+        encounter rankings.
 
         Args:
-            encounter_id (int): The encounter to collect rankings for. Encounter IDs can be obtained using a /zones request.
-            metric (str, optional): The metric to query for. Valid fight metrics are &#39;speed&#39;, &#39;execution&#39; and &#39;feats&#39;. Valid character metrics are &#39;dps&#39;, &#39;hps&#39;, &#39;bossdps, &#39;tankhps&#39;, or &#39;playerspeed&#39;. For WoW only, &#39;krsi&#39; can be used for tank survivability ranks and &#39;progress&#39; can be used for guild progress info. Defaults to &#39;speed&#39;.
-            size (str, optional): The raid size to query for. This is only valid for fixed size raids. Raids with flexible sizing must omit this parameter. Defaults to None.
-            difficulty (str, optional): The difficulty setting to query for. Valid difficulty settings are 1 = LFR, 2 = Flex, 3 = Normal, 4 = Heroic, 5 = Mythic, 10 = Challenge Mode, 100 = WildStar/FF. Can be omitted for encounters with only one difficulty setting. Defaults to None.
-            partition (int, optional): The partition group to query for. Most zones have only one partition, and this can be omitted. Hellfire Citadel has two partitions (1 for original, 2 for pre-patch). Highmaul and BRF have two partitions (1 for US/EU, 2 for Asia). Defaults to None.
-            game_class (int, optional): The class to query for if a character metric is specified. Valid class IDs can be obtained from a /classes API request. Defaults to None.
-            spec (int, optional): The spec to query for if a character metric is specified. Valid spec IDs can be obtained from a /classes API request. Defaults to None.
-            bracket (int, optional): The bracket to query for. If omitted or if a value of 0 is specified, then all brackets are examined. Brackets can be obtained from a /zones API request. Defaults to None.
-            server (str, optional): A server to filter on. If set, the region must also be specified. This is the slug field in Blizzard terminology. Defaults to None.
-            region (str, optional): The short name of a region to filter on (e.g., US, NA, EU). Defaults to None.
-            page (int, optional): The page to examine, starting from 1. If the value is omitted, then 1 is assumed. For example, with a page of 2 and a limit of 300, you will be fetching rankings 301-600. Defaults to None.
-            limit (int, optional): Maximum results per page, starting from 1. If the value is omitted, then 50 is assumed. Defaults to None.
-            filter (str, optional): A search filter string, limiting the search to specific classes, specs, fight durations, raid sizes, etc. The format should match the string used on the public rankings pages. Defaults to None.
-            include_combatant_info (bool, optional): Whether or not to include combatant info like gear and talents. Optional. Defaults to false.
+            encounter_id (int): The encounter to collect rankings for.
+                Encounter IDs can be obtained using a /zones request.
+            metric (str, optional): The metric to query for.
+                Valid fight metrics are &#39;speed&#39;, &#39;execution&#39; and &#39;feats&#39;.
+                Valid character metrics are &#39;dps&#39;, &#39;hps&#39;, &#39;bossdps, &#39;tankhps&#39;,
+                or &#39;playerspeed&#39;. For WoW only, &#39;krsi&#39; can be used for tank
+                survivability ranks and &#39;progress&#39; can be used for guild
+                progress info. Defaults to &#39;speed&#39;.
+            size (str, optional): The raid size to query for. This is only
+                valid for fixed size raids. Raids with flexible sizing must
+                omit this parameter. Defaults to None.
+            difficulty (str, optional): The difficulty setting to query for.
+                Valid difficulty settings are 1 = LFR, 2 = Flex, 3 = Normal,
+                4 = Heroic, 5 = Mythic, 10 = Challenge Mode, 100 = WildStar/FF.
+                Can be omitted for encounters with only one difficulty setting.
+                Defaults to None.
+            partition (int, optional): The partition group to query for.
+                Most zones have only one partition, and this can be omitted.
+                Hellfire Citadel has two partitions (1 for original,
+                2 for pre-patch). Highmaul and BRF have two partitions
+                (1 for US/EU, 2 for Asia). Defaults to None.
+            game_class (int, optional): The class to query for if a character
+                metric is specified. Valid class IDs can be obtained from a
+                /classes API request. Defaults to None.
+            spec (int, optional): The spec to query for if a character metric
+                is specified. Valid spec IDs can be obtained from a /classes
+                API request. Defaults to None.
+            bracket (int, optional): The bracket to query for. If omitted or if
+                a value of 0 is specified, then all brackets are examined.
+                Brackets can be obtained from a /zones API request.
+                Defaults to None.
+            server (str, optional): A server to filter on. If set, the region
+                must also be specified. This is the slug field in Blizzard
+                terminology. Defaults to None.
+            region (str, optional): The short name of a region to filter on
+                (e.g., US, NA, EU). Defaults to None.
+            page (int, optional): The page to examine, starting from 1. If the
+                value is omitted, then 1 is assumed. For example, with a page
+                of 2 and a limit of 300, you will be fetching rankings 301-600.
+                Defaults to None.
+            limit (int, optional): Maximum results per page, starting from 1.
+                If the value is omitted, then 50 is assumed. Defaults to None.
+            filter (str, optional): A search filter string, limiting the search
+                to specific classes, specs, fight durations, raid sizes, etc.
+                The format should match the string used on the public rankings
+                pages. Defaults to None.
+            include_combatant_info (bool, optional): Whether or not to include
+                combatant info like gear and talents. Optional.
+                Defaults to false.
 
         Raises:
             ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -434,21 +668,34 @@ class WCLApi():
 
         params = {}
 
-        if metric is not None: params.update({&#39;metric&#39; : metric})
-        if size is not None: params.update({&#39;size&#39; : size})
-        if difficulty is not None: params.update({&#39;difficulty&#39; : difficulty})
-        if partition is not None: params.update({&#39;partition&#39; : partition})
-        if game_class is not None: params.update({&#39;class&#39; : game_class})
-        if spec is not None: params.update({&#39;spec&#39; : spec})
-        if bracket is not None: params.update({&#39;bracket&#39; : bracket})
-        if server is not None: params.update({&#39;server&#39; : server})
-        if region is not None: params.update({&#39;region&#39; : region})
-        if page is not None: params.update({&#39;page&#39; : page})
-        if limit is not None: params.update({&#39;limit&#39; : limit})
-        if filter is not None: params.update({&#39;filter&#39; : filter})
-        if include_combatant_info is not None: params.update({&#39;includeCombatantInfo&#39; : include_combatant_info})
+        if metric is not None:
+            params.update({&#39;metric&#39;: metric})
+        if size is not None:
+            params.update({&#39;size&#39;: size})
+        if difficulty is not None:
+            params.update({&#39;difficulty&#39;: difficulty})
+        if partition is not None:
+            params.update({&#39;partition&#39;: partition})
+        if game_class is not None:
+            params.update({&#39;class&#39;: game_class})
+        if spec is not None:
+            params.update({&#39;spec&#39;: spec})
+        if bracket is not None:
+            params.update({&#39;bracket&#39;: bracket})
+        if server is not None:
+            params.update({&#39;server&#39;: server})
+        if region is not None:
+            params.update({&#39;region&#39;: region})
+        if page is not None:
+            params.update({&#39;page&#39;: page})
+        if limit is not None:
+            params.update({&#39;limit&#39;: limit})
+        if filter is not None:
+            params.update({&#39;filter&#39;: filter})
+        if include_combatant_info is not None:
+            params.update({&#39;includeCombatantInfo&#39;: include_combatant_info})
 
-        params.update({&#39;api_key&#39; : api_key})
+        params.update({&#39;api_key&#39;: api_key})
 
         resp = None
         cont = None
@@ -469,7 +716,8 @@ class WCLApi():
 
                 next_page = resp_json[&#39;hasMorePages&#39;]
 
-                params.update({&#39;page&#39; : resp_json[&#39;page&#39;] + 1})
+                params.update({&#39;page&#39;: resp_json[&#39;page&#39;] + 1})
+                logger.info(f&#34;Additional page loaded: {resp_json[&#39;page&#39;] + 1}&#34;)
             else:
                 break
 
@@ -480,9 +728,9 @@ class WCLApi():
             if resp.status_code == 401:
                 raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
     def get_zones(self, endpoint=r&#39;zones&#39;):
         &#34;&#34;&#34;
@@ -493,7 +741,8 @@ class WCLApi():
 
         Raises:
             ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -509,7 +758,7 @@ class WCLApi():
         cont = None
 
         params = {}
-        params.update({&#39;api_key&#39; : api_key})
+        params.update({&#39;api_key&#39;: api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -520,9 +769,9 @@ class WCLApi():
         if resp.status_code == 401:
             raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
     def load_saved_query(self, query, argspec):
         cont = None
@@ -546,9 +795,9 @@ class WCLApi():
         arg_str = &#39;_&#39;.join([argspec.locals[&#39;report_code&#39;]] +
                            [str(argspec.locals[arg])
                             for arg in argspec.args if
-                                argspec.locals[arg] is not None and
-                                not isinstance(argspec.locals[arg], WCLApi) and
-                                arg not in [&#39;endpoint&#39;, &#39;report_code&#39;, &#39;view&#39;]] +
+                            argspec.locals[arg] is not None and
+                            not isinstance(argspec.locals[arg], WCLApi) and
+                            arg not in [&#39;endpoint&#39;, &#39;report_code&#39;, &#39;view&#39;]] +
                            [argspec.locals[&#39;view&#39;]])
         return f&#34;wcl_{query}_{arg_str}.json&#34;</code></pre>
 </details>
@@ -610,10 +859,13 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         &#34;&#34;&#34;
         assert api_key is not None, &#34;Please enter an api_key&#34;
         self.api_key = api_key
-        self.query_dir = os.path.join(sys.path[0], &#39;saved_queries&#39;) if query_dir is None else query_dir
+        self.query_dir = os.path.join(
+            sys.path[0], &#39;saved_queries&#39;) if query_dir is None else query_dir
         self.http = sessions.BaseUrlSession(base_url)
-        self.http.hooks[&#39;response&#39;] = [lambda response, *args, **kwargs: response.raise_for_status()]
-        retries = Retry(total=6, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+        self.http.hooks[&#39;response&#39;] = [lambda response,
+                                       *args, **kwargs: response.raise_for_status()]
+        retries = Retry(total=6, backoff_factor=1,
+                        status_forcelist=[429, 500, 502, 503, 504])
         adapter = TimeoutHttpAdapter(timeout=timeout, max_retries=retries)
         self.http.mount(&#34;https://&#34;, adapter)
         self.http.mount(&#34;http://&#34;, adapter)
@@ -626,16 +878,25 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         Send a GET /reports/guild request to the API, returns the guild reports.
 
         Args:
-            server (str): server name for the which the guild reports are to be found.
-            server_region (str): server region for the which the reports are to be found.
+            server (str): server name for the which the guild reports are to be
+                found.
+            server_region (str): server region for the which the reports are to
+                be found.
             guild_name (str): guild for which the reports are to be found.
-            start_time (int, optional): An optional start time. This is a UNIX timestamp but with millisecond precision. If omitted, 0 is assumed. Defaults to None.
-            end_time (int, optional): An optional end time. This is a UNIX timestamp but with millisecond precision. If omitted, the current time is assumed. Defaults to None.
-            endpoint (str, optional): endpoint for the request. Defaults to r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;.
+            start_time (int, optional): An optional start time. This is a UNIX
+                timestamp but with millisecond precision. If omitted, 0 is
+                assumed. Defaults to None.
+            end_time (int, optional): An optional end time. This is a UNIX
+                timestamp but with millisecond precision. If omitted, the
+                current time is assumed. Defaults to None.
+            endpoint (str, optional): endpoint for the request. Defaults to
+                r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;.
 
         Raises:
-            ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ValueError: If the Api class is not initialized prior to
+                execution.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -648,15 +909,19 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
         headers = {}
 
-        endpoint = endpoint.replace(&#34;:serverName&#34;, server.lower().replace(&#39; &#39;, &#39;-&#39;)
+        endpoint = endpoint.replace(&#34;:serverName&#34;,
+                                    server.lower().replace(&#39; &#39;, &#39;-&#39;)
                                     ).replace(&#34;:serverRegion&#34;, server_region
-                                              ).replace(&#34;:guildName&#34;, guild_name)
+                                              ).replace(&#34;:guildName&#34;,
+                                                        guild_name)
 
         params = {}
 
-        params.update({&#39;api_key&#39; : api_key})
-        if start_time is not None: params.update({&#39;start&#39; : start_time})
-        if end_time is not None: params.update({&#39;end&#39; : end_time})
+        params.update({&#39;api_key&#39;: api_key})
+        if start_time is not None:
+            params.update({&#39;start&#39;: start_time})
+        if end_time is not None:
+            params.update({&#39;end&#39;: end_time})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -667,21 +932,26 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         if resp.status_code == 401:
             raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
-    def get_report_fights(self, report_code, endpoint=r&#39;report/fights/:report_code&#39;):
+    def get_report_fights(self, report_code,
+                          endpoint=r&#39;report/fights/:report_code&#39;):
         &#34;&#34;&#34;
-        Send a GET /report/fights request to the API, returns the report fights.
+        Send a GET /report/fights request to the API, returns the report
+        fights.
 
         Args:
-            report_code (str): report code for the which the fights are to be found.
-            endpoint (str, optional): endpoint for the request. Defaults to r&#39;report/fights/:report_code&#39;.
+            report_code (str): report code for the which the fights are to be
+                found.
+            endpoint (str, optional): endpoint for the request. Defaults to
+                r&#39;report/fights/:report_code&#39;.
 
         Raises:
             ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -697,7 +967,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
         params = {}
 
-        params.update({&#39;api_key&#39; : api_key})
+        params.update({&#39;api_key&#39;: api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -708,9 +978,9 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         if resp.status_code == 401:
             raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
     def get_report_events(self, view, report_code,
                           start_time=None,
@@ -736,29 +1006,93 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
         Args:
             view (str): view for the which the events are to be found.
-            report_code (str): report code for the which the events are to be found.
-            start_time (int, optional): A start time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-            end_time (int, optional): An end time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-            hostility (int, optional): An optional hostility value of 0 or 1. The default is 0. A value of 0 means to collect data for Friendlies. A value of 1 means to collect data for Enemies. Defaults to None.
-            sourceid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the source (or target for damage-taken) of the event will be returned. The actor&#39;s pets will also be included (unless the options field overrides). Defaults to None.
-            sourceinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the source (or target for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. Defaults to None.
-            sourceclass (str, optional): An optional actor class to filter to. If set, only events where the source (or target for damage-taken) involves that class (e.g., Mage) will be returned. Defaults to None.
-            targetid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the target (or source for damage-taken) of the event will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            targetinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the target (or source for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            targetclass (str, optional): An optional actor class to filter to. If set, only events where the target (or source for damage-taken) involves that class (e.g., Mage) will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            abilityid (int, optional): An optional ability ID to filter to. If set, only events where the ability matches will be returned. Consolidated abilities (WCL only) are represented using a negative number that matches the ability ID that everything is consolidated under. For the &#39;deaths&#39; view, this represents a specific killing blow. For the resources views, the abilityid is not an ability but a resource type. Valid resource types can be viewed at https://www.warcraftlogs.com/reports/resource_types/ Defaults to None.
-            death (int, optional): An optional death to filter to. Only used for the deaths command. Select the Nth death in the time range that matches all the other filters. Defaults to None.
-            options (int, optional): A set of options for what to include/exclude. These correspond to options like Include Overkill in the Damage Done pane. Complete list will be forthcoming. If omitted, appropriate defaults that match WCL&#39;s default behavior will be chosen. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            cutoff (int, optional): An optional death cutoff. If set, events after that number of deaths have occurred will not be examined. Defaults to None.
-            encounter (int, optional): An optional encounter filter. If set to a specific encounter ID, only fights involving a specific encounter will be considered. The encounter IDs match those used in rankings/statistics. Defaults to None.
-            wipes (int, optional): An optional wipes filter. If set to 1, only wipes will be considered. Defaults to None.
-            filter_exp (str, optional): An optional filter written in WCL&#39;s expression language. Events must match the filter to be included. Defaults to None.
-            translate (bool, optional): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.onal): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.tional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.
-            endpoint (str, optional): endpoint for the request. Defaults to r&#39;report/events/:view/:report_code&#39;.
+            report_code (str): report code for the which the events are to be
+                found.
+            start_time (int, optional): A start time. This is a time from the
+                start of the report in milliseconds. If omitted, 0 is assumed.
+                Defaults to None.
+            end_time (int, optional): An end time. This is a time from the
+                start of the report in milliseconds. If omitted, 0 is assumed.
+                Defaults to None.
+            hostility (int, optional): An optional hostility value of 0 or 1.
+                The default is 0. A value of 0 means to collect data for
+                Friendlies. A value of 1 means to collect data for Enemies.
+                Defaults to None.
+            sourceid (int, optional): An optional actor ID to filter to. If
+                set, only events where the ID matches the source (or target for
+                damage-taken) of the event will be returned. The actor&#39;s pets
+                will also be included (unless the options field overrides).
+                Defaults to None.
+            sourceinstance (int, optional): An optional actor instance ID to
+                filter to. If set, only events where the instance ID matches
+                the source (or target for damage-taken) of the event will be
+                returned. This is useful to look for all events involving NPC
+                N, where N is the actor instance ID. Defaults to None.
+            sourceclass (str, optional): An optional actor class to filter to.
+                If set, only events where the source (or target for
+                damage-taken) involves that class (e.g., Mage) will be
+                returned. Defaults to None.
+            targetid (int, optional): An optional actor ID to filter to. If
+                set, only events where the ID matches the target (or source for
+                damage-taken) of the event will be returned. This value is not
+                used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+                &#39;resources-gains&#39; views. Defaults to None.
+            targetinstance (int, optional): An optional actor instance ID to
+                filter to. If set, only events where the instance ID matches
+                the target (or source for damage-taken) of the event will be
+                returned. This is useful to look for all events involving NPC
+                N, where N is the actor instance ID. This value is not used in
+                the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+                &#39;resources-gains&#39; views. Defaults to None.
+            targetclass (str, optional): An optional actor class to filter to.
+                If set, only events where the target (or source for
+                damage-taken) involves that class (e.g., Mage) will be
+                returned. This value is not used in the &#39;deaths&#39;,
+                &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views.
+                Defaults to None.
+            abilityid (int, optional): An optional ability ID to filter to. If
+                set, only events where the ability matches will be returned.
+                Consolidated abilities (WCL only) are represented using a
+                negative number that matches the ability ID that everything is
+                consolidated under. For the &#39;deaths&#39; view, this represents a
+                specific killing blow. For the resources views, the abilityid
+                is not an ability but a resource type. Valid resource types can
+                be viewed at
+                https://www.warcraftlogs.com/reports/resource_types/
+                Defaults to None.
+            death (int, optional): An optional death to filter to. Only used
+                for the deaths command. Select the Nth death in the time range
+                that matches all the other filters. Defaults to None.
+            options (int, optional): A set of options for what to
+                include/exclude. These correspond to options like Include
+                Overkill in the Damage Done pane. Complete list will be
+                forthcoming. If omitted, appropriate defaults that match WCL&#39;s
+                default behavior will be chosen. This value is not used in the
+                &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39;
+                views. Defaults to None.
+            cutoff (int, optional): An optional death cutoff. If set, events
+                after that number of deaths have occurred will not be examined.
+                Defaults to None.
+            encounter (int, optional): An optional encounter filter. If set to
+                a specific encounter ID, only fights involving a specific
+                encounter will be considered. The encounter IDs match those
+                used in rankings/statistics. Defaults to None.
+            wipes (int, optional): An optional wipes filter. If set to 1, only
+                wipes will be considered. Defaults to None.
+            filter_exp (str, optional): An optional filter written in WCL&#39;s
+                expression language. Events must match the filter to be
+                included. Defaults to None.
+            translate (bool, optional): An optional flag indicating that the
+                results should be translated into the language of the host
+                (e.g., cn.warcraftlogs.com would get Chinese results).
+                Defaults to None
+            endpoint (str, optional): endpoint for the request. Defaults to
+                r&#39;report/events/:view/:report_code&#39;.
 
         Raises:
             ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -777,29 +1111,47 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
         headers = {}
 
-        endpoint = endpoint.replace(&#39;:view&#39;, view).replace(&#34;:report_code&#34;, report_code)
+        endpoint = endpoint.replace(&#39;:view&#39;, view).replace(
+            &#34;:report_code&#34;, report_code)
 
         params = {}
 
-        if start_time is not None: params.update({&#39;start&#39; : start_time})
-        if end_time is not None: params.update({&#39;end&#39; : end_time})
-        if hostility is not None: params.update({&#39;hostility&#39; : hostility})
-        if sourceid is not None: params.update({&#39;sourceid&#39; : sourceid})
-        if sourceinstance is not None: params.update({&#39;sourceinstance&#39; : sourceinstance})
-        if sourceclass is not None: params.update({&#39;sourceclass&#39; : sourceclass})
-        if targetid is not None: params.update({&#39;targetid&#39; : targetid})
-        if targetinstance is not None: params.update({&#39;targetinstance&#39; : targetinstance})
-        if targetclass is not None: params.update({&#39;targetclass&#39; : targetclass})
-        if abilityid is not None: params.update({&#39;abilityid&#39; : abilityid})
-        if death is not None: params.update({&#39;death&#39; : death})
-        if options is not None: params.update({&#39;options&#39; : options})
-        if cutoff is not None: params.update({&#39;cutoff&#39; : cutoff})
-        if encounter is not None: params.update({&#39;encounter&#39; : encounter})
-        if wipes is not None: params.update({&#39;wipes&#39; : wipes})
-        if filter_exp is not None: params.update({&#39;filter&#39; : filter_exp})
-        if translate is not None: params.update({&#39;translate&#39; : translate})
+        if start_time is not None:
+            params.update({&#39;start&#39;: start_time})
+        if end_time is not None:
+            params.update({&#39;end&#39;: end_time})
+        if hostility is not None:
+            params.update({&#39;hostility&#39;: hostility})
+        if sourceid is not None:
+            params.update({&#39;sourceid&#39;: sourceid})
+        if sourceinstance is not None:
+            params.update({&#39;sourceinstance&#39;: sourceinstance})
+        if sourceclass is not None:
+            params.update({&#39;sourceclass&#39;: sourceclass})
+        if targetid is not None:
+            params.update({&#39;targetid&#39;: targetid})
+        if targetinstance is not None:
+            params.update({&#39;targetinstance&#39;: targetinstance})
+        if targetclass is not None:
+            params.update({&#39;targetclass&#39;: targetclass})
+        if abilityid is not None:
+            params.update({&#39;abilityid&#39;: abilityid})
+        if death is not None:
+            params.update({&#39;death&#39;: death})
+        if options is not None:
+            params.update({&#39;options&#39;: options})
+        if cutoff is not None:
+            params.update({&#39;cutoff&#39;: cutoff})
+        if encounter is not None:
+            params.update({&#39;encounter&#39;: encounter})
+        if wipes is not None:
+            params.update({&#39;wipes&#39;: wipes})
+        if filter_exp is not None:
+            params.update({&#39;filter&#39;: filter_exp})
+        if translate is not None:
+            params.update({&#39;translate&#39;: translate})
 
-        params.update({&#39;api_key&#39; : api_key})
+        params.update({&#39;api_key&#39;: api_key})
 
         next_timestamp = -1
         resp = &#39;&#39;
@@ -807,7 +1159,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         while next_timestamp != 0:
 
             if next_timestamp &gt; 0:
-                params.update({&#39;start&#39; : next_timestamp})
+                params.update({&#39;start&#39;: next_timestamp})
 
             resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -820,6 +1172,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
                 try:
                     next_timestamp = resp_json[&#39;nextPageTimestamp&#39;]
+                    logger.info(&#34;Loaded from new timestamp: &#34;
+                                f&#34;{resp_json[&#39;nextPageTimestamp&#39;]}&#34;)
                 except KeyError:
                     next_timestamp = 0
             else:
@@ -833,9 +1187,9 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
             if resp.status_code == 401:
                 raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
     def get_report_tables(self, view, report_code,
                           start_time=None,
@@ -857,33 +1211,103 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
                           translate=None,
                           endpoint=&#39;report/tables/:view/:report_code&#39;):
         &#34;&#34;&#34;
-        Send a GET /report/tables request to the API, returns the report tables.
+        Send a GET /report/tables request to the API, returns the report
+        tables.
 
         Args:
             view (str): view for the which the tables are to be found.
-            report_code (str): report code for the which the tables are to be found.
-            start_time (int, optional): A start time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-            end_time (int, optional): An end time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-            hostility (int, optional): An optional hostility value of 0 or 1. The default is 0. A value of 0 means to collect data for Friendlies. A value of 1 means to collect data for Enemies. Defaults to None.
-            by (str, optional): An optional parameter indicating how to group entries. They can be grouped by &#39;source&#39;, by &#39;target&#39;, or by &#39;ability&#39;. This value matches WCL&#39;s default behavior if omitted. For buffs and debuffs, a value of &#39;source&#39; means auras gained by the source, and a value of &#39;target&#39; means auras cast by the source. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            sourceid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the source (or target for damage-taken) of the event will be returned. The actor&#39;s pets will also be included (unless the options field overrides). Defaults to None.
-            sourceinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the source (or target for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. Defaults to None.
-            sourceclass (str, optional): An optional actor class to filter to. If set, only events where the source (or target for damage-taken) involves that class (e.g., Mage) will be returned. Defaults to None.
-            targetid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the target (or source for damage-taken) of the event will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            targetinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the target (or source for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            targetclass (str, optional): An optional actor class to filter to. If set, only events where the target (or source for damage-taken) involves that class (e.g., Mage) will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            abilityid (int, optional): An optional ability ID to filter to. If set, only events where the ability matches will be returned. Consolidated abilities (WCL only) are represented using a negative number that matches the ability ID that everything is consolidated under. For the &#39;deaths&#39; view, this represents a specific killing blow. For the resources views, the abilityid is not an ability but a resource type. Valid resource types can be viewed at https://www.warcraftlogs.com/reports/resource_types/ Defaults to None.
-            options (int, optional): A set of options for what to include/exclude. These correspond to options like Include Overkill in the Damage Done pane. Complete list will be forthcoming. If omitted, appropriate defaults that match WCL&#39;s default behavior will be chosen. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-            cutoff (int, optional): An optional death cutoff. If set, events after that number of deaths have occurred will not be examined. Defaults to None.
-            encounter (int, optional): An optional encounter filter. If set to a specific encounter ID, only fights involving a specific encounter will be considered. The encounter IDs match those used in rankings/statistics. Defaults to None.
-            wipes (int, optional): An optional wipes filter. If set to 1, only wipes will be considered. Defaults to None.
-            filter_exp (str, optional): An optional filter written in WCL&#39;s expression language. Events must match the filter to be included. Defaults to None.
-            translate (bool, optional): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.onal): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.tional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.
-            endpoint (str, optional): endpoint for the request. Defaults to r&#39;report/tables/:view/:report_code&#39;.
+            report_code (str): report code for the which the tables are to be
+                found.
+            start_time (int, optional): A start time. This is a time from the
+                start of the report in milliseconds. If omitted, 0 is assumed.
+                Defaults to None.
+            end_time (int, optional): An end time. This is a time from the
+                start of the report in milliseconds. If omitted, 0 is assumed.
+                Defaults to None.
+            hostility (int, optional): An optional hostility value of 0 or 1.
+                The default is 0. A value of 0 means to collect data for
+                Friendlies. A value of 1 means to collect data for Enemies.
+                Defaults to None.
+            by (str, optional): An optional parameter indicating how to group
+                entries. They can be grouped by &#39;source&#39;, by &#39;target&#39;, or by
+                &#39;ability&#39;. This value matches WCL&#39;s default behavior if
+                omitted. For buffs and debuffs, a value of &#39;source&#39; means auras
+                gained by the source, and a value of &#39;target&#39; means auras cast
+                by the source. This value is not used in the &#39;deaths&#39;,
+                &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views.
+                Defaults to None.
+            sourceid (int, optional): An optional actor ID to filter to. If
+                set, only events where the ID matches the source (or target for
+                damage-taken) of the event will be returned. The actor&#39;s pets
+                will also be included (unless the options field overrides).
+                Defaults to None.
+            sourceinstance (int, optional): An optional actor instance ID to
+                filter to. If set, only events where the instance ID matches
+                the source (or target for damage-taken) of the event will be
+                returned. This is useful to look for all events involving NPC
+                N, where N is the actor instance ID. Defaults to None.
+            sourceclass (str, optional): An optional actor class to filter to.
+                If set, only events where the source (or target for
+                damage-taken) involves that class (e.g., Mage) will be
+                returned. Defaults to None.
+            targetid (int, optional): An optional actor ID to filter to. If
+                set, only events where the ID matches the target (or source
+                for damage-taken) of the event will be returned. This value is
+                not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+                &#39;resources-gains&#39; views. Defaults to None.
+            targetinstance (int, optional): An optional actor instance ID to
+                filter to. If set, only events where the instance ID matches
+                the target (or source for damage-taken) of the event will be
+                returned. This is useful to look for all events involving NPC
+                N, where N is the actor instance ID. This value is not used in
+                the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+                &#39;resources-gains&#39; views. Defaults to None.
+            targetclass (str, optional): An optional actor class to filter to.
+                If set, only events where the target (or source for
+                damage-taken) involves that class (e.g., Mage) will be
+                returned. This value is not used in the &#39;deaths&#39;,
+                &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39;
+                views. Defaults to None.
+            abilityid (int, optional): An optional ability ID to filter to.
+                If set, only events where the ability matches will be
+                returned. Consolidated abilities (WCL only) are represented
+                using a negative number that matches the ability ID that
+                everything is consolidated under. For the &#39;deaths&#39; view, this
+                represents a specific killing blow. For the resources views,
+                the abilityid is not an ability but a resource type. Valid
+                resource types can be viewed at
+                https://www.warcraftlogs.com/reports/resource_types/
+                Defaults to None.
+            options (int, optional): A set of options for what to
+                include/exclude. These correspond to options like Include
+                Overkill in the Damage Done pane. Complete list will be
+                forthcoming. If omitted, appropriate defaults that match
+                WCL&#39;s default behavior will be chosen. This value is not used
+                in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+                &#39;resources-gains&#39; views. Defaults to None.
+            cutoff (int, optional): An optional death cutoff. If set, events
+                after that number of deaths have occurred will not be examined.
+                Defaults to None.
+            encounter (int, optional): An optional encounter filter. If set to
+                a specific encounter ID, only fights involving a specific
+                encounter will be considered. The encounter IDs match those
+                used in rankings/statistics. Defaults to None.
+            wipes (int, optional): An optional wipes filter. If set to 1, only
+                wipes will be considered. Defaults to None.
+            filter_exp (str, optional): An optional filter written in WCL&#39;s
+                expression language. Events must match the filter to be
+                included. Defaults to None.
+            translate (bool, optional): An optional flag indicating that the
+                results should be translated into the language of the host
+                (e.g., cn.warcraftlogs.com would get Chinese results).
+                Defaults to None
+            endpoint (str, optional): endpoint for the request.
+                Defaults to r&#39;report/tables/:view/:report_code&#39;.
 
         Raises:
             ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -896,29 +1320,47 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
         headers = {}
 
-        endpoint = endpoint.replace(&#39;:view&#39;, view).replace(&#34;:report_code&#34;, report_code)
+        endpoint = endpoint.replace(&#39;:view&#39;, view).replace(
+            &#34;:report_code&#34;, report_code)
 
         params = {}
 
-        if start_time is not None: params.update({&#39;start&#39; : start_time})
-        if end_time is not None: params.update({&#39;end&#39; : end_time})
-        if hostility is not None: params.update({&#39;hostility&#39; : hostility})
-        if by is not None: params.update({&#39;by&#39; : by})
-        if sourceid is not None: params.update({&#39;sourceid&#39; : sourceid})
-        if sourceinstance is not None: params.update({&#39;sourceinstance&#39; : sourceinstance})
-        if sourceclass is not None: params.update({&#39;sourceclass&#39; : sourceclass})
-        if targetid is not None: params.update({&#39;targetid&#39; : targetid})
-        if targetinstance is not None: params.update({&#39;targetinstance&#39; : targetinstance})
-        if targetclass is not None: params.update({&#39;targetclass&#39; : targetclass})
-        if abilityid is not None: params.update({&#39;abilityid&#39; : abilityid})
-        if options is not None: params.update({&#39;options&#39; : options})
-        if cutoff is not None: params.update({&#39;cutoff&#39; : cutoff})
-        if encounter is not None: params.update({&#39;encounter&#39; : encounter})
-        if wipes is not None: params.update({&#39;wipes&#39; : wipes})
-        if filter_exp is not None: params.update({&#39;filter&#39; : filter_exp})
-        if translate is not None: params.update({&#39;translate&#39; : translate})
+        if start_time is not None:
+            params.update({&#39;start&#39;: start_time})
+        if end_time is not None:
+            params.update({&#39;end&#39;: end_time})
+        if hostility is not None:
+            params.update({&#39;hostility&#39;: hostility})
+        if by is not None:
+            params.update({&#39;by&#39;: by})
+        if sourceid is not None:
+            params.update({&#39;sourceid&#39;: sourceid})
+        if sourceinstance is not None:
+            params.update({&#39;sourceinstance&#39;: sourceinstance})
+        if sourceclass is not None:
+            params.update({&#39;sourceclass&#39;: sourceclass})
+        if targetid is not None:
+            params.update({&#39;targetid&#39;: targetid})
+        if targetinstance is not None:
+            params.update({&#39;targetinstance&#39;: targetinstance})
+        if targetclass is not None:
+            params.update({&#39;targetclass&#39;: targetclass})
+        if abilityid is not None:
+            params.update({&#39;abilityid&#39;: abilityid})
+        if options is not None:
+            params.update({&#39;options&#39;: options})
+        if cutoff is not None:
+            params.update({&#39;cutoff&#39;: cutoff})
+        if encounter is not None:
+            params.update({&#39;encounter&#39;: encounter})
+        if wipes is not None:
+            params.update({&#39;wipes&#39;: wipes})
+        if filter_exp is not None:
+            params.update({&#39;filter&#39;: filter_exp})
+        if translate is not None:
+            params.update({&#39;translate&#39;: translate})
 
-        params.update({&#39;api_key&#39; : api_key})
+        params.update({&#39;api_key&#39;: api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -929,9 +1371,9 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         if resp.status_code == 401:
             raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
     def get_encounter_rankings(self, encounter_id,
                                metric=&#39;speed&#39;,
@@ -949,27 +1391,64 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
                                include_combatant_info=False,
                                endpoint=&#39;rankings/encounter/:encounter_id&#39;):
         &#34;&#34;&#34;
-        Send a GET /rankings/encounter request to the API, returns the encounter rankings.
+        Send a GET /rankings/encounter request to the API, returns the
+        encounter rankings.
 
         Args:
-            encounter_id (int): The encounter to collect rankings for. Encounter IDs can be obtained using a /zones request.
-            metric (str, optional): The metric to query for. Valid fight metrics are &#39;speed&#39;, &#39;execution&#39; and &#39;feats&#39;. Valid character metrics are &#39;dps&#39;, &#39;hps&#39;, &#39;bossdps, &#39;tankhps&#39;, or &#39;playerspeed&#39;. For WoW only, &#39;krsi&#39; can be used for tank survivability ranks and &#39;progress&#39; can be used for guild progress info. Defaults to &#39;speed&#39;.
-            size (str, optional): The raid size to query for. This is only valid for fixed size raids. Raids with flexible sizing must omit this parameter. Defaults to None.
-            difficulty (str, optional): The difficulty setting to query for. Valid difficulty settings are 1 = LFR, 2 = Flex, 3 = Normal, 4 = Heroic, 5 = Mythic, 10 = Challenge Mode, 100 = WildStar/FF. Can be omitted for encounters with only one difficulty setting. Defaults to None.
-            partition (int, optional): The partition group to query for. Most zones have only one partition, and this can be omitted. Hellfire Citadel has two partitions (1 for original, 2 for pre-patch). Highmaul and BRF have two partitions (1 for US/EU, 2 for Asia). Defaults to None.
-            game_class (int, optional): The class to query for if a character metric is specified. Valid class IDs can be obtained from a /classes API request. Defaults to None.
-            spec (int, optional): The spec to query for if a character metric is specified. Valid spec IDs can be obtained from a /classes API request. Defaults to None.
-            bracket (int, optional): The bracket to query for. If omitted or if a value of 0 is specified, then all brackets are examined. Brackets can be obtained from a /zones API request. Defaults to None.
-            server (str, optional): A server to filter on. If set, the region must also be specified. This is the slug field in Blizzard terminology. Defaults to None.
-            region (str, optional): The short name of a region to filter on (e.g., US, NA, EU). Defaults to None.
-            page (int, optional): The page to examine, starting from 1. If the value is omitted, then 1 is assumed. For example, with a page of 2 and a limit of 300, you will be fetching rankings 301-600. Defaults to None.
-            limit (int, optional): Maximum results per page, starting from 1. If the value is omitted, then 50 is assumed. Defaults to None.
-            filter (str, optional): A search filter string, limiting the search to specific classes, specs, fight durations, raid sizes, etc. The format should match the string used on the public rankings pages. Defaults to None.
-            include_combatant_info (bool, optional): Whether or not to include combatant info like gear and talents. Optional. Defaults to false.
+            encounter_id (int): The encounter to collect rankings for.
+                Encounter IDs can be obtained using a /zones request.
+            metric (str, optional): The metric to query for.
+                Valid fight metrics are &#39;speed&#39;, &#39;execution&#39; and &#39;feats&#39;.
+                Valid character metrics are &#39;dps&#39;, &#39;hps&#39;, &#39;bossdps, &#39;tankhps&#39;,
+                or &#39;playerspeed&#39;. For WoW only, &#39;krsi&#39; can be used for tank
+                survivability ranks and &#39;progress&#39; can be used for guild
+                progress info. Defaults to &#39;speed&#39;.
+            size (str, optional): The raid size to query for. This is only
+                valid for fixed size raids. Raids with flexible sizing must
+                omit this parameter. Defaults to None.
+            difficulty (str, optional): The difficulty setting to query for.
+                Valid difficulty settings are 1 = LFR, 2 = Flex, 3 = Normal,
+                4 = Heroic, 5 = Mythic, 10 = Challenge Mode, 100 = WildStar/FF.
+                Can be omitted for encounters with only one difficulty setting.
+                Defaults to None.
+            partition (int, optional): The partition group to query for.
+                Most zones have only one partition, and this can be omitted.
+                Hellfire Citadel has two partitions (1 for original,
+                2 for pre-patch). Highmaul and BRF have two partitions
+                (1 for US/EU, 2 for Asia). Defaults to None.
+            game_class (int, optional): The class to query for if a character
+                metric is specified. Valid class IDs can be obtained from a
+                /classes API request. Defaults to None.
+            spec (int, optional): The spec to query for if a character metric
+                is specified. Valid spec IDs can be obtained from a /classes
+                API request. Defaults to None.
+            bracket (int, optional): The bracket to query for. If omitted or if
+                a value of 0 is specified, then all brackets are examined.
+                Brackets can be obtained from a /zones API request.
+                Defaults to None.
+            server (str, optional): A server to filter on. If set, the region
+                must also be specified. This is the slug field in Blizzard
+                terminology. Defaults to None.
+            region (str, optional): The short name of a region to filter on
+                (e.g., US, NA, EU). Defaults to None.
+            page (int, optional): The page to examine, starting from 1. If the
+                value is omitted, then 1 is assumed. For example, with a page
+                of 2 and a limit of 300, you will be fetching rankings 301-600.
+                Defaults to None.
+            limit (int, optional): Maximum results per page, starting from 1.
+                If the value is omitted, then 50 is assumed. Defaults to None.
+            filter (str, optional): A search filter string, limiting the search
+                to specific classes, specs, fight durations, raid sizes, etc.
+                The format should match the string used on the public rankings
+                pages. Defaults to None.
+            include_combatant_info (bool, optional): Whether or not to include
+                combatant info like gear and talents. Optional.
+                Defaults to false.
 
         Raises:
             ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -985,21 +1464,34 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
         params = {}
 
-        if metric is not None: params.update({&#39;metric&#39; : metric})
-        if size is not None: params.update({&#39;size&#39; : size})
-        if difficulty is not None: params.update({&#39;difficulty&#39; : difficulty})
-        if partition is not None: params.update({&#39;partition&#39; : partition})
-        if game_class is not None: params.update({&#39;class&#39; : game_class})
-        if spec is not None: params.update({&#39;spec&#39; : spec})
-        if bracket is not None: params.update({&#39;bracket&#39; : bracket})
-        if server is not None: params.update({&#39;server&#39; : server})
-        if region is not None: params.update({&#39;region&#39; : region})
-        if page is not None: params.update({&#39;page&#39; : page})
-        if limit is not None: params.update({&#39;limit&#39; : limit})
-        if filter is not None: params.update({&#39;filter&#39; : filter})
-        if include_combatant_info is not None: params.update({&#39;includeCombatantInfo&#39; : include_combatant_info})
+        if metric is not None:
+            params.update({&#39;metric&#39;: metric})
+        if size is not None:
+            params.update({&#39;size&#39;: size})
+        if difficulty is not None:
+            params.update({&#39;difficulty&#39;: difficulty})
+        if partition is not None:
+            params.update({&#39;partition&#39;: partition})
+        if game_class is not None:
+            params.update({&#39;class&#39;: game_class})
+        if spec is not None:
+            params.update({&#39;spec&#39;: spec})
+        if bracket is not None:
+            params.update({&#39;bracket&#39;: bracket})
+        if server is not None:
+            params.update({&#39;server&#39;: server})
+        if region is not None:
+            params.update({&#39;region&#39;: region})
+        if page is not None:
+            params.update({&#39;page&#39;: page})
+        if limit is not None:
+            params.update({&#39;limit&#39;: limit})
+        if filter is not None:
+            params.update({&#39;filter&#39;: filter})
+        if include_combatant_info is not None:
+            params.update({&#39;includeCombatantInfo&#39;: include_combatant_info})
 
-        params.update({&#39;api_key&#39; : api_key})
+        params.update({&#39;api_key&#39;: api_key})
 
         resp = None
         cont = None
@@ -1020,7 +1512,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
                 next_page = resp_json[&#39;hasMorePages&#39;]
 
-                params.update({&#39;page&#39; : resp_json[&#39;page&#39;] + 1})
+                params.update({&#39;page&#39;: resp_json[&#39;page&#39;] + 1})
+                logger.info(f&#34;Additional page loaded: {resp_json[&#39;page&#39;] + 1}&#34;)
             else:
                 break
 
@@ -1031,9 +1524,9 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
             if resp.status_code == 401:
                 raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
     def get_zones(self, endpoint=r&#39;zones&#39;):
         &#34;&#34;&#34;
@@ -1044,7 +1537,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
         Raises:
             ValueError: If the Api class is not initialized prior to execution.
-            ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+            ConnectionError: Different Connectionerrors based on retrieved
+                ApiErrors.
 
         Returns:
             dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -1060,7 +1554,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         cont = None
 
         params = {}
-        params.update({&#39;api_key&#39; : api_key})
+        params.update({&#39;api_key&#39;: api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -1071,9 +1565,9 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         if resp.status_code == 401:
             raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-        raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                              &#34; and message : {}&#34;.format(resp.content) +
-                              &#34; for endpoint: {}&#34;.format(endpoint))
+        raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                              f&#34; and message : {resp.content}&#34;
+                              f&#34; for endpoint: {endpoint}&#34;)
 
     def load_saved_query(self, query, argspec):
         cont = None
@@ -1097,9 +1591,9 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         arg_str = &#39;_&#39;.join([argspec.locals[&#39;report_code&#39;]] +
                            [str(argspec.locals[arg])
                             for arg in argspec.args if
-                                argspec.locals[arg] is not None and
-                                not isinstance(argspec.locals[arg], WCLApi) and
-                                arg not in [&#39;endpoint&#39;, &#39;report_code&#39;, &#39;view&#39;]] +
+                            argspec.locals[arg] is not None and
+                            not isinstance(argspec.locals[arg], WCLApi) and
+                            arg not in [&#39;endpoint&#39;, &#39;report_code&#39;, &#39;view&#39;]] +
                            [argspec.locals[&#39;view&#39;]])
         return f&#34;wcl_{query}_{arg_str}.json&#34;</code></pre>
 </details>
@@ -1109,44 +1603,81 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 <span>def <span class="ident">get_encounter_rankings</span></span>(<span>self, encounter_id, metric='speed', size=None, difficulty=None, partition=None, game_class=None, spec=None, bracket=None, server=None, region=None, page=None, limit=None, filter=None, include_combatant_info=False, endpoint='rankings/encounter/:encounter_id')</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Send a GET /rankings/encounter request to the API, returns the encounter rankings.</p>
+<div class="desc"><p>Send a GET /rankings/encounter request to the API, returns the
+encounter rankings.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>encounter_id</code></strong> :&ensp;<code>int</code></dt>
-<dd>The encounter to collect rankings for. Encounter IDs can be obtained using a /zones request.</dd>
+<dd>The encounter to collect rankings for.
+Encounter IDs can be obtained using a /zones request.</dd>
 <dt><strong><code>metric</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>The metric to query for. Valid fight metrics are 'speed', 'execution' and 'feats'. Valid character metrics are 'dps', 'hps', 'bossdps, 'tankhps', or 'playerspeed'. For WoW only, 'krsi' can be used for tank survivability ranks and 'progress' can be used for guild progress info. Defaults to 'speed'.</dd>
+<dd>The metric to query for.
+Valid fight metrics are 'speed', 'execution' and 'feats'.
+Valid character metrics are 'dps', 'hps', 'bossdps, 'tankhps',
+or 'playerspeed'. For WoW only, 'krsi' can be used for tank
+survivability ranks and 'progress' can be used for guild
+progress info. Defaults to 'speed'.</dd>
 <dt><strong><code>size</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>The raid size to query for. This is only valid for fixed size raids. Raids with flexible sizing must omit this parameter. Defaults to None.</dd>
+<dd>The raid size to query for. This is only
+valid for fixed size raids. Raids with flexible sizing must
+omit this parameter. Defaults to None.</dd>
 <dt><strong><code>difficulty</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>The difficulty setting to query for. Valid difficulty settings are 1 = LFR, 2 = Flex, 3 = Normal, 4 = Heroic, 5 = Mythic, 10 = Challenge Mode, 100 = WildStar/FF. Can be omitted for encounters with only one difficulty setting. Defaults to None.</dd>
+<dd>The difficulty setting to query for.
+Valid difficulty settings are 1 = LFR, 2 = Flex, 3 = Normal,
+4 = Heroic, 5 = Mythic, 10 = Challenge Mode, 100 = WildStar/FF.
+Can be omitted for encounters with only one difficulty setting.
+Defaults to None.</dd>
 <dt><strong><code>partition</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>The partition group to query for. Most zones have only one partition, and this can be omitted. Hellfire Citadel has two partitions (1 for original, 2 for pre-patch). Highmaul and BRF have two partitions (1 for US/EU, 2 for Asia). Defaults to None.</dd>
+<dd>The partition group to query for.
+Most zones have only one partition, and this can be omitted.
+Hellfire Citadel has two partitions (1 for original,
+2 for pre-patch). Highmaul and BRF have two partitions
+(1 for US/EU, 2 for Asia). Defaults to None.</dd>
 <dt><strong><code>game_class</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>The class to query for if a character metric is specified. Valid class IDs can be obtained from a /classes API request. Defaults to None.</dd>
+<dd>The class to query for if a character
+metric is specified. Valid class IDs can be obtained from a
+/classes API request. Defaults to None.</dd>
 <dt><strong><code>spec</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>The spec to query for if a character metric is specified. Valid spec IDs can be obtained from a /classes API request. Defaults to None.</dd>
+<dd>The spec to query for if a character metric
+is specified. Valid spec IDs can be obtained from a /classes
+API request. Defaults to None.</dd>
 <dt><strong><code>bracket</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>The bracket to query for. If omitted or if a value of 0 is specified, then all brackets are examined. Brackets can be obtained from a /zones API request. Defaults to None.</dd>
+<dd>The bracket to query for. If omitted or if
+a value of 0 is specified, then all brackets are examined.
+Brackets can be obtained from a /zones API request.
+Defaults to None.</dd>
 <dt><strong><code>server</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>A server to filter on. If set, the region must also be specified. This is the slug field in Blizzard terminology. Defaults to None.</dd>
+<dd>A server to filter on. If set, the region
+must also be specified. This is the slug field in Blizzard
+terminology. Defaults to None.</dd>
 <dt><strong><code>region</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>The short name of a region to filter on (e.g., US, NA, EU). Defaults to None.</dd>
+<dd>The short name of a region to filter on
+(e.g., US, NA, EU). Defaults to None.</dd>
 <dt><strong><code>page</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>The page to examine, starting from 1. If the value is omitted, then 1 is assumed. For example, with a page of 2 and a limit of 300, you will be fetching rankings 301-600. Defaults to None.</dd>
+<dd>The page to examine, starting from 1. If the
+value is omitted, then 1 is assumed. For example, with a page
+of 2 and a limit of 300, you will be fetching rankings 301-600.
+Defaults to None.</dd>
 <dt><strong><code>limit</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>Maximum results per page, starting from 1. If the value is omitted, then 50 is assumed. Defaults to None.</dd>
+<dd>Maximum results per page, starting from 1.
+If the value is omitted, then 50 is assumed. Defaults to None.</dd>
 <dt><strong><code>filter</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>A search filter string, limiting the search to specific classes, specs, fight durations, raid sizes, etc. The format should match the string used on the public rankings pages. Defaults to None.</dd>
+<dd>A search filter string, limiting the search
+to specific classes, specs, fight durations, raid sizes, etc.
+The format should match the string used on the public rankings
+pages. Defaults to None.</dd>
 <dt><strong><code>include_combatant_info</code></strong> :&ensp;<code>bool</code>, optional</dt>
-<dd>Whether or not to include combatant info like gear and talents. Optional. Defaults to false.</dd>
+<dd>Whether or not to include
+combatant info like gear and talents. Optional.
+Defaults to false.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
 <dt><code>ValueError</code></dt>
 <dd>If the Api class is not initialized prior to execution.</dd>
 <dt><code>ConnectionError</code></dt>
-<dd>Different Connectionerrors based on retrieved ApiErrors.</dd>
+<dd>Different Connectionerrors based on retrieved
+ApiErrors.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>dict(JsonApiObject): JsonApi object in the form of a dict.</p></div>
@@ -1170,27 +1701,64 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
                            include_combatant_info=False,
                            endpoint=&#39;rankings/encounter/:encounter_id&#39;):
     &#34;&#34;&#34;
-    Send a GET /rankings/encounter request to the API, returns the encounter rankings.
+    Send a GET /rankings/encounter request to the API, returns the
+    encounter rankings.
 
     Args:
-        encounter_id (int): The encounter to collect rankings for. Encounter IDs can be obtained using a /zones request.
-        metric (str, optional): The metric to query for. Valid fight metrics are &#39;speed&#39;, &#39;execution&#39; and &#39;feats&#39;. Valid character metrics are &#39;dps&#39;, &#39;hps&#39;, &#39;bossdps, &#39;tankhps&#39;, or &#39;playerspeed&#39;. For WoW only, &#39;krsi&#39; can be used for tank survivability ranks and &#39;progress&#39; can be used for guild progress info. Defaults to &#39;speed&#39;.
-        size (str, optional): The raid size to query for. This is only valid for fixed size raids. Raids with flexible sizing must omit this parameter. Defaults to None.
-        difficulty (str, optional): The difficulty setting to query for. Valid difficulty settings are 1 = LFR, 2 = Flex, 3 = Normal, 4 = Heroic, 5 = Mythic, 10 = Challenge Mode, 100 = WildStar/FF. Can be omitted for encounters with only one difficulty setting. Defaults to None.
-        partition (int, optional): The partition group to query for. Most zones have only one partition, and this can be omitted. Hellfire Citadel has two partitions (1 for original, 2 for pre-patch). Highmaul and BRF have two partitions (1 for US/EU, 2 for Asia). Defaults to None.
-        game_class (int, optional): The class to query for if a character metric is specified. Valid class IDs can be obtained from a /classes API request. Defaults to None.
-        spec (int, optional): The spec to query for if a character metric is specified. Valid spec IDs can be obtained from a /classes API request. Defaults to None.
-        bracket (int, optional): The bracket to query for. If omitted or if a value of 0 is specified, then all brackets are examined. Brackets can be obtained from a /zones API request. Defaults to None.
-        server (str, optional): A server to filter on. If set, the region must also be specified. This is the slug field in Blizzard terminology. Defaults to None.
-        region (str, optional): The short name of a region to filter on (e.g., US, NA, EU). Defaults to None.
-        page (int, optional): The page to examine, starting from 1. If the value is omitted, then 1 is assumed. For example, with a page of 2 and a limit of 300, you will be fetching rankings 301-600. Defaults to None.
-        limit (int, optional): Maximum results per page, starting from 1. If the value is omitted, then 50 is assumed. Defaults to None.
-        filter (str, optional): A search filter string, limiting the search to specific classes, specs, fight durations, raid sizes, etc. The format should match the string used on the public rankings pages. Defaults to None.
-        include_combatant_info (bool, optional): Whether or not to include combatant info like gear and talents. Optional. Defaults to false.
+        encounter_id (int): The encounter to collect rankings for.
+            Encounter IDs can be obtained using a /zones request.
+        metric (str, optional): The metric to query for.
+            Valid fight metrics are &#39;speed&#39;, &#39;execution&#39; and &#39;feats&#39;.
+            Valid character metrics are &#39;dps&#39;, &#39;hps&#39;, &#39;bossdps, &#39;tankhps&#39;,
+            or &#39;playerspeed&#39;. For WoW only, &#39;krsi&#39; can be used for tank
+            survivability ranks and &#39;progress&#39; can be used for guild
+            progress info. Defaults to &#39;speed&#39;.
+        size (str, optional): The raid size to query for. This is only
+            valid for fixed size raids. Raids with flexible sizing must
+            omit this parameter. Defaults to None.
+        difficulty (str, optional): The difficulty setting to query for.
+            Valid difficulty settings are 1 = LFR, 2 = Flex, 3 = Normal,
+            4 = Heroic, 5 = Mythic, 10 = Challenge Mode, 100 = WildStar/FF.
+            Can be omitted for encounters with only one difficulty setting.
+            Defaults to None.
+        partition (int, optional): The partition group to query for.
+            Most zones have only one partition, and this can be omitted.
+            Hellfire Citadel has two partitions (1 for original,
+            2 for pre-patch). Highmaul and BRF have two partitions
+            (1 for US/EU, 2 for Asia). Defaults to None.
+        game_class (int, optional): The class to query for if a character
+            metric is specified. Valid class IDs can be obtained from a
+            /classes API request. Defaults to None.
+        spec (int, optional): The spec to query for if a character metric
+            is specified. Valid spec IDs can be obtained from a /classes
+            API request. Defaults to None.
+        bracket (int, optional): The bracket to query for. If omitted or if
+            a value of 0 is specified, then all brackets are examined.
+            Brackets can be obtained from a /zones API request.
+            Defaults to None.
+        server (str, optional): A server to filter on. If set, the region
+            must also be specified. This is the slug field in Blizzard
+            terminology. Defaults to None.
+        region (str, optional): The short name of a region to filter on
+            (e.g., US, NA, EU). Defaults to None.
+        page (int, optional): The page to examine, starting from 1. If the
+            value is omitted, then 1 is assumed. For example, with a page
+            of 2 and a limit of 300, you will be fetching rankings 301-600.
+            Defaults to None.
+        limit (int, optional): Maximum results per page, starting from 1.
+            If the value is omitted, then 50 is assumed. Defaults to None.
+        filter (str, optional): A search filter string, limiting the search
+            to specific classes, specs, fight durations, raid sizes, etc.
+            The format should match the string used on the public rankings
+            pages. Defaults to None.
+        include_combatant_info (bool, optional): Whether or not to include
+            combatant info like gear and talents. Optional.
+            Defaults to false.
 
     Raises:
         ValueError: If the Api class is not initialized prior to execution.
-        ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+        ConnectionError: Different Connectionerrors based on retrieved
+            ApiErrors.
 
     Returns:
         dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -1206,21 +1774,34 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
     params = {}
 
-    if metric is not None: params.update({&#39;metric&#39; : metric})
-    if size is not None: params.update({&#39;size&#39; : size})
-    if difficulty is not None: params.update({&#39;difficulty&#39; : difficulty})
-    if partition is not None: params.update({&#39;partition&#39; : partition})
-    if game_class is not None: params.update({&#39;class&#39; : game_class})
-    if spec is not None: params.update({&#39;spec&#39; : spec})
-    if bracket is not None: params.update({&#39;bracket&#39; : bracket})
-    if server is not None: params.update({&#39;server&#39; : server})
-    if region is not None: params.update({&#39;region&#39; : region})
-    if page is not None: params.update({&#39;page&#39; : page})
-    if limit is not None: params.update({&#39;limit&#39; : limit})
-    if filter is not None: params.update({&#39;filter&#39; : filter})
-    if include_combatant_info is not None: params.update({&#39;includeCombatantInfo&#39; : include_combatant_info})
+    if metric is not None:
+        params.update({&#39;metric&#39;: metric})
+    if size is not None:
+        params.update({&#39;size&#39;: size})
+    if difficulty is not None:
+        params.update({&#39;difficulty&#39;: difficulty})
+    if partition is not None:
+        params.update({&#39;partition&#39;: partition})
+    if game_class is not None:
+        params.update({&#39;class&#39;: game_class})
+    if spec is not None:
+        params.update({&#39;spec&#39;: spec})
+    if bracket is not None:
+        params.update({&#39;bracket&#39;: bracket})
+    if server is not None:
+        params.update({&#39;server&#39;: server})
+    if region is not None:
+        params.update({&#39;region&#39;: region})
+    if page is not None:
+        params.update({&#39;page&#39;: page})
+    if limit is not None:
+        params.update({&#39;limit&#39;: limit})
+    if filter is not None:
+        params.update({&#39;filter&#39;: filter})
+    if include_combatant_info is not None:
+        params.update({&#39;includeCombatantInfo&#39;: include_combatant_info})
 
-    params.update({&#39;api_key&#39; : api_key})
+    params.update({&#39;api_key&#39;: api_key})
 
     resp = None
     cont = None
@@ -1241,7 +1822,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
             next_page = resp_json[&#39;hasMorePages&#39;]
 
-            params.update({&#39;page&#39; : resp_json[&#39;page&#39;] + 1})
+            params.update({&#39;page&#39;: resp_json[&#39;page&#39;] + 1})
+            logger.info(f&#34;Additional page loaded: {resp_json[&#39;page&#39;] + 1}&#34;)
         else:
             break
 
@@ -1252,9 +1834,9 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         if resp.status_code == 401:
             raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-    raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                          &#34; and message : {}&#34;.format(resp.content) +
-                          &#34; for endpoint: {}&#34;.format(endpoint))</code></pre>
+    raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                          f&#34; and message : {resp.content}&#34;
+                          f&#34; for endpoint: {endpoint}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="WCLApi.Warcraftlogs.WCLApi.get_guild_reports"><code class="name flex">
@@ -1265,24 +1847,33 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>server</code></strong> :&ensp;<code>str</code></dt>
-<dd>server name for the which the guild reports are to be found.</dd>
+<dd>server name for the which the guild reports are to be
+found.</dd>
 <dt><strong><code>server_region</code></strong> :&ensp;<code>str</code></dt>
-<dd>server region for the which the reports are to be found.</dd>
+<dd>server region for the which the reports are to
+be found.</dd>
 <dt><strong><code>guild_name</code></strong> :&ensp;<code>str</code></dt>
 <dd>guild for which the reports are to be found.</dd>
 <dt><strong><code>start_time</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional start time. This is a UNIX timestamp but with millisecond precision. If omitted, 0 is assumed. Defaults to None.</dd>
+<dd>An optional start time. This is a UNIX
+timestamp but with millisecond precision. If omitted, 0 is
+assumed. Defaults to None.</dd>
 <dt><strong><code>end_time</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional end time. This is a UNIX timestamp but with millisecond precision. If omitted, the current time is assumed. Defaults to None.</dd>
+<dd>An optional end time. This is a UNIX
+timestamp but with millisecond precision. If omitted, the
+current time is assumed. Defaults to None.</dd>
 <dt><strong><code>endpoint</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>endpoint for the request. Defaults to r'reports/guild/:guildName/:serverName/:serverRegion'.</dd>
+<dd>endpoint for the request. Defaults to
+r'reports/guild/:guildName/:serverName/:serverRegion'.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
 <dt><code>ValueError</code></dt>
-<dd>If the Api class is not initialized prior to execution.</dd>
+<dd>If the Api class is not initialized prior to
+execution.</dd>
 <dt><code>ConnectionError</code></dt>
-<dd>Different Connectionerrors based on retrieved ApiErrors.</dd>
+<dd>Different Connectionerrors based on retrieved
+ApiErrors.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>dict(JsonApiObject): JsonApi object in the form of a dict.</p></div>
@@ -1298,16 +1889,25 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
     Send a GET /reports/guild request to the API, returns the guild reports.
 
     Args:
-        server (str): server name for the which the guild reports are to be found.
-        server_region (str): server region for the which the reports are to be found.
+        server (str): server name for the which the guild reports are to be
+            found.
+        server_region (str): server region for the which the reports are to
+            be found.
         guild_name (str): guild for which the reports are to be found.
-        start_time (int, optional): An optional start time. This is a UNIX timestamp but with millisecond precision. If omitted, 0 is assumed. Defaults to None.
-        end_time (int, optional): An optional end time. This is a UNIX timestamp but with millisecond precision. If omitted, the current time is assumed. Defaults to None.
-        endpoint (str, optional): endpoint for the request. Defaults to r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;.
+        start_time (int, optional): An optional start time. This is a UNIX
+            timestamp but with millisecond precision. If omitted, 0 is
+            assumed. Defaults to None.
+        end_time (int, optional): An optional end time. This is a UNIX
+            timestamp but with millisecond precision. If omitted, the
+            current time is assumed. Defaults to None.
+        endpoint (str, optional): endpoint for the request. Defaults to
+            r&#39;reports/guild/:guildName/:serverName/:serverRegion&#39;.
 
     Raises:
-        ValueError: If the Api class is not initialized prior to execution.
-        ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+        ValueError: If the Api class is not initialized prior to
+            execution.
+        ConnectionError: Different Connectionerrors based on retrieved
+            ApiErrors.
 
     Returns:
         dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -1320,15 +1920,19 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
     headers = {}
 
-    endpoint = endpoint.replace(&#34;:serverName&#34;, server.lower().replace(&#39; &#39;, &#39;-&#39;)
+    endpoint = endpoint.replace(&#34;:serverName&#34;,
+                                server.lower().replace(&#39; &#39;, &#39;-&#39;)
                                 ).replace(&#34;:serverRegion&#34;, server_region
-                                          ).replace(&#34;:guildName&#34;, guild_name)
+                                          ).replace(&#34;:guildName&#34;,
+                                                    guild_name)
 
     params = {}
 
-    params.update({&#39;api_key&#39; : api_key})
-    if start_time is not None: params.update({&#39;start&#39; : start_time})
-    if end_time is not None: params.update({&#39;end&#39; : end_time})
+    params.update({&#39;api_key&#39;: api_key})
+    if start_time is not None:
+        params.update({&#39;start&#39;: start_time})
+    if end_time is not None:
+        params.update({&#39;end&#39;: end_time})
 
     resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -1339,9 +1943,9 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
     if resp.status_code == 401:
         raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-    raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                          &#34; and message : {}&#34;.format(resp.content) +
-                          &#34; for endpoint: {}&#34;.format(endpoint))</code></pre>
+    raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                          f&#34; and message : {resp.content}&#34;
+                          f&#34; for endpoint: {endpoint}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="WCLApi.Warcraftlogs.WCLApi.get_report_events"><code class="name flex">
@@ -1354,50 +1958,114 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 <dt><strong><code>view</code></strong> :&ensp;<code>str</code></dt>
 <dd>view for the which the events are to be found.</dd>
 <dt><strong><code>report_code</code></strong> :&ensp;<code>str</code></dt>
-<dd>report code for the which the events are to be found.</dd>
+<dd>report code for the which the events are to be
+found.</dd>
 <dt><strong><code>start_time</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>A start time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.</dd>
+<dd>A start time. This is a time from the
+start of the report in milliseconds. If omitted, 0 is assumed.
+Defaults to None.</dd>
 <dt><strong><code>end_time</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An end time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.</dd>
+<dd>An end time. This is a time from the
+start of the report in milliseconds. If omitted, 0 is assumed.
+Defaults to None.</dd>
 <dt><strong><code>hostility</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional hostility value of 0 or 1. The default is 0. A value of 0 means to collect data for Friendlies. A value of 1 means to collect data for Enemies. Defaults to None.</dd>
+<dd>An optional hostility value of 0 or 1.
+The default is 0. A value of 0 means to collect data for
+Friendlies. A value of 1 means to collect data for Enemies.
+Defaults to None.</dd>
 <dt><strong><code>sourceid</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional actor ID to filter to. If set, only events where the ID matches the source (or target for damage-taken) of the event will be returned. The actor's pets will also be included (unless the options field overrides). Defaults to None.</dd>
+<dd>An optional actor ID to filter to. If
+set, only events where the ID matches the source (or target for
+damage-taken) of the event will be returned. The actor's pets
+will also be included (unless the options field overrides).
+Defaults to None.</dd>
 <dt><strong><code>sourceinstance</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional actor instance ID to filter to. If set, only events where the instance ID matches the source (or target for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. Defaults to None.</dd>
+<dd>An optional actor instance ID to
+filter to. If set, only events where the instance ID matches
+the source (or target for damage-taken) of the event will be
+returned. This is useful to look for all events involving NPC
+N, where N is the actor instance ID. Defaults to None.</dd>
 <dt><strong><code>sourceclass</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>An optional actor class to filter to. If set, only events where the source (or target for damage-taken) involves that class (e.g., Mage) will be returned. Defaults to None.</dd>
+<dd>An optional actor class to filter to.
+If set, only events where the source (or target for
+damage-taken) involves that class (e.g., Mage) will be
+returned. Defaults to None.</dd>
 <dt><strong><code>targetid</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional actor ID to filter to. If set, only events where the ID matches the target (or source for damage-taken) of the event will be returned. This value is not used in the 'deaths', 'survivability', 'resources' and 'resources-gains' views. Defaults to None.</dd>
+<dd>An optional actor ID to filter to. If
+set, only events where the ID matches the target (or source for
+damage-taken) of the event will be returned. This value is not
+used in the 'deaths', 'survivability', 'resources' and
+'resources-gains' views. Defaults to None.</dd>
 <dt><strong><code>targetinstance</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional actor instance ID to filter to. If set, only events where the instance ID matches the target (or source for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. This value is not used in the 'deaths', 'survivability', 'resources' and 'resources-gains' views. Defaults to None.</dd>
+<dd>An optional actor instance ID to
+filter to. If set, only events where the instance ID matches
+the target (or source for damage-taken) of the event will be
+returned. This is useful to look for all events involving NPC
+N, where N is the actor instance ID. This value is not used in
+the 'deaths', 'survivability', 'resources' and
+'resources-gains' views. Defaults to None.</dd>
 <dt><strong><code>targetclass</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>An optional actor class to filter to. If set, only events where the target (or source for damage-taken) involves that class (e.g., Mage) will be returned. This value is not used in the 'deaths', 'survivability', 'resources' and 'resources-gains' views. Defaults to None.</dd>
+<dd>An optional actor class to filter to.
+If set, only events where the target (or source for
+damage-taken) involves that class (e.g., Mage) will be
+returned. This value is not used in the 'deaths',
+'survivability', 'resources' and 'resources-gains' views.
+Defaults to None.</dd>
 <dt><strong><code>abilityid</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional ability ID to filter to. If set, only events where the ability matches will be returned. Consolidated abilities (WCL only) are represented using a negative number that matches the ability ID that everything is consolidated under. For the 'deaths' view, this represents a specific killing blow. For the resources views, the abilityid is not an ability but a resource type. Valid resource types can be viewed at <a href="https://www.warcraftlogs.com/reports/resource_types/">https://www.warcraftlogs.com/reports/resource_types/</a> Defaults to None.</dd>
+<dd>An optional ability ID to filter to. If
+set, only events where the ability matches will be returned.
+Consolidated abilities (WCL only) are represented using a
+negative number that matches the ability ID that everything is
+consolidated under. For the 'deaths' view, this represents a
+specific killing blow. For the resources views, the abilityid
+is not an ability but a resource type. Valid resource types can
+be viewed at
+<a href="https://www.warcraftlogs.com/reports/resource_types/">https://www.warcraftlogs.com/reports/resource_types/</a>
+Defaults to None.</dd>
 <dt><strong><code>death</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional death to filter to. Only used for the deaths command. Select the Nth death in the time range that matches all the other filters. Defaults to None.</dd>
+<dd>An optional death to filter to. Only used
+for the deaths command. Select the Nth death in the time range
+that matches all the other filters. Defaults to None.</dd>
 <dt><strong><code>options</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>A set of options for what to include/exclude. These correspond to options like Include Overkill in the Damage Done pane. Complete list will be forthcoming. If omitted, appropriate defaults that match WCL's default behavior will be chosen. This value is not used in the 'deaths', 'survivability', 'resources' and 'resources-gains' views. Defaults to None.</dd>
+<dd>A set of options for what to
+include/exclude. These correspond to options like Include
+Overkill in the Damage Done pane. Complete list will be
+forthcoming. If omitted, appropriate defaults that match WCL's
+default behavior will be chosen. This value is not used in the
+'deaths', 'survivability', 'resources' and 'resources-gains'
+views. Defaults to None.</dd>
 <dt><strong><code>cutoff</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional death cutoff. If set, events after that number of deaths have occurred will not be examined. Defaults to None.</dd>
+<dd>An optional death cutoff. If set, events
+after that number of deaths have occurred will not be examined.
+Defaults to None.</dd>
 <dt><strong><code>encounter</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional encounter filter. If set to a specific encounter ID, only fights involving a specific encounter will be considered. The encounter IDs match those used in rankings/statistics. Defaults to None.</dd>
+<dd>An optional encounter filter. If set to
+a specific encounter ID, only fights involving a specific
+encounter will be considered. The encounter IDs match those
+used in rankings/statistics. Defaults to None.</dd>
 <dt><strong><code>wipes</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional wipes filter. If set to 1, only wipes will be considered. Defaults to None.</dd>
+<dd>An optional wipes filter. If set to 1, only
+wipes will be considered. Defaults to None.</dd>
 <dt><strong><code>filter_exp</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>An optional filter written in WCL's expression language. Events must match the filter to be included. Defaults to None.</dd>
+<dd>An optional filter written in WCL's
+expression language. Events must match the filter to be
+included. Defaults to None.</dd>
 <dt><strong><code>translate</code></strong> :&ensp;<code>bool</code>, optional</dt>
-<dd>An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.onal): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.tional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.</dd>
+<dd>An optional flag indicating that the
+results should be translated into the language of the host
+(e.g., cn.warcraftlogs.com would get Chinese results).
+Defaults to None</dd>
 <dt><strong><code>endpoint</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>endpoint for the request. Defaults to r'report/events/:view/:report_code'.</dd>
+<dd>endpoint for the request. Defaults to
+r'report/events/:view/:report_code'.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
 <dt><code>ValueError</code></dt>
 <dd>If the Api class is not initialized prior to execution.</dd>
 <dt><code>ConnectionError</code></dt>
-<dd>Different Connectionerrors based on retrieved ApiErrors.</dd>
+<dd>Different Connectionerrors based on retrieved
+ApiErrors.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>dict(JsonApiObject): JsonApi object in the form of a dict.</p></div>
@@ -1429,29 +2097,93 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
     Args:
         view (str): view for the which the events are to be found.
-        report_code (str): report code for the which the events are to be found.
-        start_time (int, optional): A start time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-        end_time (int, optional): An end time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-        hostility (int, optional): An optional hostility value of 0 or 1. The default is 0. A value of 0 means to collect data for Friendlies. A value of 1 means to collect data for Enemies. Defaults to None.
-        sourceid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the source (or target for damage-taken) of the event will be returned. The actor&#39;s pets will also be included (unless the options field overrides). Defaults to None.
-        sourceinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the source (or target for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. Defaults to None.
-        sourceclass (str, optional): An optional actor class to filter to. If set, only events where the source (or target for damage-taken) involves that class (e.g., Mage) will be returned. Defaults to None.
-        targetid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the target (or source for damage-taken) of the event will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-        targetinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the target (or source for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-        targetclass (str, optional): An optional actor class to filter to. If set, only events where the target (or source for damage-taken) involves that class (e.g., Mage) will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-        abilityid (int, optional): An optional ability ID to filter to. If set, only events where the ability matches will be returned. Consolidated abilities (WCL only) are represented using a negative number that matches the ability ID that everything is consolidated under. For the &#39;deaths&#39; view, this represents a specific killing blow. For the resources views, the abilityid is not an ability but a resource type. Valid resource types can be viewed at https://www.warcraftlogs.com/reports/resource_types/ Defaults to None.
-        death (int, optional): An optional death to filter to. Only used for the deaths command. Select the Nth death in the time range that matches all the other filters. Defaults to None.
-        options (int, optional): A set of options for what to include/exclude. These correspond to options like Include Overkill in the Damage Done pane. Complete list will be forthcoming. If omitted, appropriate defaults that match WCL&#39;s default behavior will be chosen. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-        cutoff (int, optional): An optional death cutoff. If set, events after that number of deaths have occurred will not be examined. Defaults to None.
-        encounter (int, optional): An optional encounter filter. If set to a specific encounter ID, only fights involving a specific encounter will be considered. The encounter IDs match those used in rankings/statistics. Defaults to None.
-        wipes (int, optional): An optional wipes filter. If set to 1, only wipes will be considered. Defaults to None.
-        filter_exp (str, optional): An optional filter written in WCL&#39;s expression language. Events must match the filter to be included. Defaults to None.
-        translate (bool, optional): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.onal): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.tional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.
-        endpoint (str, optional): endpoint for the request. Defaults to r&#39;report/events/:view/:report_code&#39;.
+        report_code (str): report code for the which the events are to be
+            found.
+        start_time (int, optional): A start time. This is a time from the
+            start of the report in milliseconds. If omitted, 0 is assumed.
+            Defaults to None.
+        end_time (int, optional): An end time. This is a time from the
+            start of the report in milliseconds. If omitted, 0 is assumed.
+            Defaults to None.
+        hostility (int, optional): An optional hostility value of 0 or 1.
+            The default is 0. A value of 0 means to collect data for
+            Friendlies. A value of 1 means to collect data for Enemies.
+            Defaults to None.
+        sourceid (int, optional): An optional actor ID to filter to. If
+            set, only events where the ID matches the source (or target for
+            damage-taken) of the event will be returned. The actor&#39;s pets
+            will also be included (unless the options field overrides).
+            Defaults to None.
+        sourceinstance (int, optional): An optional actor instance ID to
+            filter to. If set, only events where the instance ID matches
+            the source (or target for damage-taken) of the event will be
+            returned. This is useful to look for all events involving NPC
+            N, where N is the actor instance ID. Defaults to None.
+        sourceclass (str, optional): An optional actor class to filter to.
+            If set, only events where the source (or target for
+            damage-taken) involves that class (e.g., Mage) will be
+            returned. Defaults to None.
+        targetid (int, optional): An optional actor ID to filter to. If
+            set, only events where the ID matches the target (or source for
+            damage-taken) of the event will be returned. This value is not
+            used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+            &#39;resources-gains&#39; views. Defaults to None.
+        targetinstance (int, optional): An optional actor instance ID to
+            filter to. If set, only events where the instance ID matches
+            the target (or source for damage-taken) of the event will be
+            returned. This is useful to look for all events involving NPC
+            N, where N is the actor instance ID. This value is not used in
+            the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+            &#39;resources-gains&#39; views. Defaults to None.
+        targetclass (str, optional): An optional actor class to filter to.
+            If set, only events where the target (or source for
+            damage-taken) involves that class (e.g., Mage) will be
+            returned. This value is not used in the &#39;deaths&#39;,
+            &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views.
+            Defaults to None.
+        abilityid (int, optional): An optional ability ID to filter to. If
+            set, only events where the ability matches will be returned.
+            Consolidated abilities (WCL only) are represented using a
+            negative number that matches the ability ID that everything is
+            consolidated under. For the &#39;deaths&#39; view, this represents a
+            specific killing blow. For the resources views, the abilityid
+            is not an ability but a resource type. Valid resource types can
+            be viewed at
+            https://www.warcraftlogs.com/reports/resource_types/
+            Defaults to None.
+        death (int, optional): An optional death to filter to. Only used
+            for the deaths command. Select the Nth death in the time range
+            that matches all the other filters. Defaults to None.
+        options (int, optional): A set of options for what to
+            include/exclude. These correspond to options like Include
+            Overkill in the Damage Done pane. Complete list will be
+            forthcoming. If omitted, appropriate defaults that match WCL&#39;s
+            default behavior will be chosen. This value is not used in the
+            &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39;
+            views. Defaults to None.
+        cutoff (int, optional): An optional death cutoff. If set, events
+            after that number of deaths have occurred will not be examined.
+            Defaults to None.
+        encounter (int, optional): An optional encounter filter. If set to
+            a specific encounter ID, only fights involving a specific
+            encounter will be considered. The encounter IDs match those
+            used in rankings/statistics. Defaults to None.
+        wipes (int, optional): An optional wipes filter. If set to 1, only
+            wipes will be considered. Defaults to None.
+        filter_exp (str, optional): An optional filter written in WCL&#39;s
+            expression language. Events must match the filter to be
+            included. Defaults to None.
+        translate (bool, optional): An optional flag indicating that the
+            results should be translated into the language of the host
+            (e.g., cn.warcraftlogs.com would get Chinese results).
+            Defaults to None
+        endpoint (str, optional): endpoint for the request. Defaults to
+            r&#39;report/events/:view/:report_code&#39;.
 
     Raises:
         ValueError: If the Api class is not initialized prior to execution.
-        ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+        ConnectionError: Different Connectionerrors based on retrieved
+            ApiErrors.
 
     Returns:
         dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -1470,29 +2202,47 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
     headers = {}
 
-    endpoint = endpoint.replace(&#39;:view&#39;, view).replace(&#34;:report_code&#34;, report_code)
+    endpoint = endpoint.replace(&#39;:view&#39;, view).replace(
+        &#34;:report_code&#34;, report_code)
 
     params = {}
 
-    if start_time is not None: params.update({&#39;start&#39; : start_time})
-    if end_time is not None: params.update({&#39;end&#39; : end_time})
-    if hostility is not None: params.update({&#39;hostility&#39; : hostility})
-    if sourceid is not None: params.update({&#39;sourceid&#39; : sourceid})
-    if sourceinstance is not None: params.update({&#39;sourceinstance&#39; : sourceinstance})
-    if sourceclass is not None: params.update({&#39;sourceclass&#39; : sourceclass})
-    if targetid is not None: params.update({&#39;targetid&#39; : targetid})
-    if targetinstance is not None: params.update({&#39;targetinstance&#39; : targetinstance})
-    if targetclass is not None: params.update({&#39;targetclass&#39; : targetclass})
-    if abilityid is not None: params.update({&#39;abilityid&#39; : abilityid})
-    if death is not None: params.update({&#39;death&#39; : death})
-    if options is not None: params.update({&#39;options&#39; : options})
-    if cutoff is not None: params.update({&#39;cutoff&#39; : cutoff})
-    if encounter is not None: params.update({&#39;encounter&#39; : encounter})
-    if wipes is not None: params.update({&#39;wipes&#39; : wipes})
-    if filter_exp is not None: params.update({&#39;filter&#39; : filter_exp})
-    if translate is not None: params.update({&#39;translate&#39; : translate})
+    if start_time is not None:
+        params.update({&#39;start&#39;: start_time})
+    if end_time is not None:
+        params.update({&#39;end&#39;: end_time})
+    if hostility is not None:
+        params.update({&#39;hostility&#39;: hostility})
+    if sourceid is not None:
+        params.update({&#39;sourceid&#39;: sourceid})
+    if sourceinstance is not None:
+        params.update({&#39;sourceinstance&#39;: sourceinstance})
+    if sourceclass is not None:
+        params.update({&#39;sourceclass&#39;: sourceclass})
+    if targetid is not None:
+        params.update({&#39;targetid&#39;: targetid})
+    if targetinstance is not None:
+        params.update({&#39;targetinstance&#39;: targetinstance})
+    if targetclass is not None:
+        params.update({&#39;targetclass&#39;: targetclass})
+    if abilityid is not None:
+        params.update({&#39;abilityid&#39;: abilityid})
+    if death is not None:
+        params.update({&#39;death&#39;: death})
+    if options is not None:
+        params.update({&#39;options&#39;: options})
+    if cutoff is not None:
+        params.update({&#39;cutoff&#39;: cutoff})
+    if encounter is not None:
+        params.update({&#39;encounter&#39;: encounter})
+    if wipes is not None:
+        params.update({&#39;wipes&#39;: wipes})
+    if filter_exp is not None:
+        params.update({&#39;filter&#39;: filter_exp})
+    if translate is not None:
+        params.update({&#39;translate&#39;: translate})
 
-    params.update({&#39;api_key&#39; : api_key})
+    params.update({&#39;api_key&#39;: api_key})
 
     next_timestamp = -1
     resp = &#39;&#39;
@@ -1500,7 +2250,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
     while next_timestamp != 0:
 
         if next_timestamp &gt; 0:
-            params.update({&#39;start&#39; : next_timestamp})
+            params.update({&#39;start&#39;: next_timestamp})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -1513,6 +2263,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
             try:
                 next_timestamp = resp_json[&#39;nextPageTimestamp&#39;]
+                logger.info(&#34;Loaded from new timestamp: &#34;
+                            f&#34;{resp_json[&#39;nextPageTimestamp&#39;]}&#34;)
             except KeyError:
                 next_timestamp = 0
         else:
@@ -1526,29 +2278,33 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
         if resp.status_code == 401:
             raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-    raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                          &#34; and message : {}&#34;.format(resp.content) +
-                          &#34; for endpoint: {}&#34;.format(endpoint))</code></pre>
+    raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                          f&#34; and message : {resp.content}&#34;
+                          f&#34; for endpoint: {endpoint}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="WCLApi.Warcraftlogs.WCLApi.get_report_fights"><code class="name flex">
 <span>def <span class="ident">get_report_fights</span></span>(<span>self, report_code, endpoint='report/fights/:report_code')</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Send a GET /report/fights request to the API, returns the report fights.</p>
+<div class="desc"><p>Send a GET /report/fights request to the API, returns the report
+fights.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>report_code</code></strong> :&ensp;<code>str</code></dt>
-<dd>report code for the which the fights are to be found.</dd>
+<dd>report code for the which the fights are to be
+found.</dd>
 <dt><strong><code>endpoint</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>endpoint for the request. Defaults to r'report/fights/:report_code'.</dd>
+<dd>endpoint for the request. Defaults to
+r'report/fights/:report_code'.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
 <dt><code>ValueError</code></dt>
 <dd>If the Api class is not initialized prior to execution.</dd>
 <dt><code>ConnectionError</code></dt>
-<dd>Different Connectionerrors based on retrieved ApiErrors.</dd>
+<dd>Different Connectionerrors based on retrieved
+ApiErrors.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>dict(JsonApiObject): JsonApi object in the form of a dict.</p></div>
@@ -1556,17 +2312,22 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_report_fights(self, report_code, endpoint=r&#39;report/fights/:report_code&#39;):
+<pre><code class="python">def get_report_fights(self, report_code,
+                      endpoint=r&#39;report/fights/:report_code&#39;):
     &#34;&#34;&#34;
-    Send a GET /report/fights request to the API, returns the report fights.
+    Send a GET /report/fights request to the API, returns the report
+    fights.
 
     Args:
-        report_code (str): report code for the which the fights are to be found.
-        endpoint (str, optional): endpoint for the request. Defaults to r&#39;report/fights/:report_code&#39;.
+        report_code (str): report code for the which the fights are to be
+            found.
+        endpoint (str, optional): endpoint for the request. Defaults to
+            r&#39;report/fights/:report_code&#39;.
 
     Raises:
         ValueError: If the Api class is not initialized prior to execution.
-        ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+        ConnectionError: Different Connectionerrors based on retrieved
+            ApiErrors.
 
     Returns:
         dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -1582,7 +2343,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
     params = {}
 
-    params.update({&#39;api_key&#39; : api_key})
+    params.update({&#39;api_key&#39;: api_key})
 
     resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -1593,65 +2354,135 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
     if resp.status_code == 401:
         raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-    raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                          &#34; and message : {}&#34;.format(resp.content) +
-                          &#34; for endpoint: {}&#34;.format(endpoint))</code></pre>
+    raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                          f&#34; and message : {resp.content}&#34;
+                          f&#34; for endpoint: {endpoint}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="WCLApi.Warcraftlogs.WCLApi.get_report_tables"><code class="name flex">
 <span>def <span class="ident">get_report_tables</span></span>(<span>self, view, report_code, start_time=None, end_time=None, hostility=None, by=None, sourceid=None, sourceinstance=None, sourceclass=None, targetid=None, targetinstance=None, targetclass=None, abilityid=None, options=None, cutoff=None, encounter=None, wipes=None, filter_exp=None, translate=None, endpoint='report/tables/:view/:report_code')</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Send a GET /report/tables request to the API, returns the report tables.</p>
+<div class="desc"><p>Send a GET /report/tables request to the API, returns the report
+tables.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>view</code></strong> :&ensp;<code>str</code></dt>
 <dd>view for the which the tables are to be found.</dd>
 <dt><strong><code>report_code</code></strong> :&ensp;<code>str</code></dt>
-<dd>report code for the which the tables are to be found.</dd>
+<dd>report code for the which the tables are to be
+found.</dd>
 <dt><strong><code>start_time</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>A start time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.</dd>
+<dd>A start time. This is a time from the
+start of the report in milliseconds. If omitted, 0 is assumed.
+Defaults to None.</dd>
 <dt><strong><code>end_time</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An end time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.</dd>
+<dd>An end time. This is a time from the
+start of the report in milliseconds. If omitted, 0 is assumed.
+Defaults to None.</dd>
 <dt><strong><code>hostility</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional hostility value of 0 or 1. The default is 0. A value of 0 means to collect data for Friendlies. A value of 1 means to collect data for Enemies. Defaults to None.</dd>
+<dd>An optional hostility value of 0 or 1.
+The default is 0. A value of 0 means to collect data for
+Friendlies. A value of 1 means to collect data for Enemies.
+Defaults to None.</dd>
 <dt><strong><code>by</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>An optional parameter indicating how to group entries. They can be grouped by 'source', by 'target', or by 'ability'. This value matches WCL's default behavior if omitted. For buffs and debuffs, a value of 'source' means auras gained by the source, and a value of 'target' means auras cast by the source. This value is not used in the 'deaths', 'survivability', 'resources' and 'resources-gains' views. Defaults to None.</dd>
+<dd>An optional parameter indicating how to group
+entries. They can be grouped by 'source', by 'target', or by
+'ability'. This value matches WCL's default behavior if
+omitted. For buffs and debuffs, a value of 'source' means auras
+gained by the source, and a value of 'target' means auras cast
+by the source. This value is not used in the 'deaths',
+'survivability', 'resources' and 'resources-gains' views.
+Defaults to None.</dd>
 <dt><strong><code>sourceid</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional actor ID to filter to. If set, only events where the ID matches the source (or target for damage-taken) of the event will be returned. The actor's pets will also be included (unless the options field overrides). Defaults to None.</dd>
+<dd>An optional actor ID to filter to. If
+set, only events where the ID matches the source (or target for
+damage-taken) of the event will be returned. The actor's pets
+will also be included (unless the options field overrides).
+Defaults to None.</dd>
 <dt><strong><code>sourceinstance</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional actor instance ID to filter to. If set, only events where the instance ID matches the source (or target for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. Defaults to None.</dd>
+<dd>An optional actor instance ID to
+filter to. If set, only events where the instance ID matches
+the source (or target for damage-taken) of the event will be
+returned. This is useful to look for all events involving NPC
+N, where N is the actor instance ID. Defaults to None.</dd>
 <dt><strong><code>sourceclass</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>An optional actor class to filter to. If set, only events where the source (or target for damage-taken) involves that class (e.g., Mage) will be returned. Defaults to None.</dd>
+<dd>An optional actor class to filter to.
+If set, only events where the source (or target for
+damage-taken) involves that class (e.g., Mage) will be
+returned. Defaults to None.</dd>
 <dt><strong><code>targetid</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional actor ID to filter to. If set, only events where the ID matches the target (or source for damage-taken) of the event will be returned. This value is not used in the 'deaths', 'survivability', 'resources' and 'resources-gains' views. Defaults to None.</dd>
+<dd>An optional actor ID to filter to. If
+set, only events where the ID matches the target (or source
+for damage-taken) of the event will be returned. This value is
+not used in the 'deaths', 'survivability', 'resources' and
+'resources-gains' views. Defaults to None.</dd>
 <dt><strong><code>targetinstance</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional actor instance ID to filter to. If set, only events where the instance ID matches the target (or source for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. This value is not used in the 'deaths', 'survivability', 'resources' and 'resources-gains' views. Defaults to None.</dd>
+<dd>An optional actor instance ID to
+filter to. If set, only events where the instance ID matches
+the target (or source for damage-taken) of the event will be
+returned. This is useful to look for all events involving NPC
+N, where N is the actor instance ID. This value is not used in
+the 'deaths', 'survivability', 'resources' and
+'resources-gains' views. Defaults to None.</dd>
 <dt><strong><code>targetclass</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>An optional actor class to filter to. If set, only events where the target (or source for damage-taken) involves that class (e.g., Mage) will be returned. This value is not used in the 'deaths', 'survivability', 'resources' and 'resources-gains' views. Defaults to None.</dd>
+<dd>An optional actor class to filter to.
+If set, only events where the target (or source for
+damage-taken) involves that class (e.g., Mage) will be
+returned. This value is not used in the 'deaths',
+'survivability', 'resources' and 'resources-gains'
+views. Defaults to None.</dd>
 <dt><strong><code>abilityid</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional ability ID to filter to. If set, only events where the ability matches will be returned. Consolidated abilities (WCL only) are represented using a negative number that matches the ability ID that everything is consolidated under. For the 'deaths' view, this represents a specific killing blow. For the resources views, the abilityid is not an ability but a resource type. Valid resource types can be viewed at <a href="https://www.warcraftlogs.com/reports/resource_types/">https://www.warcraftlogs.com/reports/resource_types/</a> Defaults to None.</dd>
+<dd>An optional ability ID to filter to.
+If set, only events where the ability matches will be
+returned. Consolidated abilities (WCL only) are represented
+using a negative number that matches the ability ID that
+everything is consolidated under. For the 'deaths' view, this
+represents a specific killing blow. For the resources views,
+the abilityid is not an ability but a resource type. Valid
+resource types can be viewed at
+<a href="https://www.warcraftlogs.com/reports/resource_types/">https://www.warcraftlogs.com/reports/resource_types/</a>
+Defaults to None.</dd>
 <dt><strong><code>options</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>A set of options for what to include/exclude. These correspond to options like Include Overkill in the Damage Done pane. Complete list will be forthcoming. If omitted, appropriate defaults that match WCL's default behavior will be chosen. This value is not used in the 'deaths', 'survivability', 'resources' and 'resources-gains' views. Defaults to None.</dd>
+<dd>A set of options for what to
+include/exclude. These correspond to options like Include
+Overkill in the Damage Done pane. Complete list will be
+forthcoming. If omitted, appropriate defaults that match
+WCL's default behavior will be chosen. This value is not used
+in the 'deaths', 'survivability', 'resources' and
+'resources-gains' views. Defaults to None.</dd>
 <dt><strong><code>cutoff</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional death cutoff. If set, events after that number of deaths have occurred will not be examined. Defaults to None.</dd>
+<dd>An optional death cutoff. If set, events
+after that number of deaths have occurred will not be examined.
+Defaults to None.</dd>
 <dt><strong><code>encounter</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional encounter filter. If set to a specific encounter ID, only fights involving a specific encounter will be considered. The encounter IDs match those used in rankings/statistics. Defaults to None.</dd>
+<dd>An optional encounter filter. If set to
+a specific encounter ID, only fights involving a specific
+encounter will be considered. The encounter IDs match those
+used in rankings/statistics. Defaults to None.</dd>
 <dt><strong><code>wipes</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>An optional wipes filter. If set to 1, only wipes will be considered. Defaults to None.</dd>
+<dd>An optional wipes filter. If set to 1, only
+wipes will be considered. Defaults to None.</dd>
 <dt><strong><code>filter_exp</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>An optional filter written in WCL's expression language. Events must match the filter to be included. Defaults to None.</dd>
+<dd>An optional filter written in WCL's
+expression language. Events must match the filter to be
+included. Defaults to None.</dd>
 <dt><strong><code>translate</code></strong> :&ensp;<code>bool</code>, optional</dt>
-<dd>An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.onal): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.tional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.</dd>
+<dd>An optional flag indicating that the
+results should be translated into the language of the host
+(e.g., cn.warcraftlogs.com would get Chinese results).
+Defaults to None</dd>
 <dt><strong><code>endpoint</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>endpoint for the request. Defaults to r'report/tables/:view/:report_code'.</dd>
+<dd>endpoint for the request.
+Defaults to r'report/tables/:view/:report_code'.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
 <dt><code>ValueError</code></dt>
 <dd>If the Api class is not initialized prior to execution.</dd>
 <dt><code>ConnectionError</code></dt>
-<dd>Different Connectionerrors based on retrieved ApiErrors.</dd>
+<dd>Different Connectionerrors based on retrieved
+ApiErrors.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>dict(JsonApiObject): JsonApi object in the form of a dict.</p></div>
@@ -1679,33 +2510,103 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
                       translate=None,
                       endpoint=&#39;report/tables/:view/:report_code&#39;):
     &#34;&#34;&#34;
-    Send a GET /report/tables request to the API, returns the report tables.
+    Send a GET /report/tables request to the API, returns the report
+    tables.
 
     Args:
         view (str): view for the which the tables are to be found.
-        report_code (str): report code for the which the tables are to be found.
-        start_time (int, optional): A start time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-        end_time (int, optional): An end time. This is a time from the start of the report in milliseconds. If omitted, 0 is assumed. Defaults to None.
-        hostility (int, optional): An optional hostility value of 0 or 1. The default is 0. A value of 0 means to collect data for Friendlies. A value of 1 means to collect data for Enemies. Defaults to None.
-        by (str, optional): An optional parameter indicating how to group entries. They can be grouped by &#39;source&#39;, by &#39;target&#39;, or by &#39;ability&#39;. This value matches WCL&#39;s default behavior if omitted. For buffs and debuffs, a value of &#39;source&#39; means auras gained by the source, and a value of &#39;target&#39; means auras cast by the source. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-        sourceid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the source (or target for damage-taken) of the event will be returned. The actor&#39;s pets will also be included (unless the options field overrides). Defaults to None.
-        sourceinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the source (or target for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. Defaults to None.
-        sourceclass (str, optional): An optional actor class to filter to. If set, only events where the source (or target for damage-taken) involves that class (e.g., Mage) will be returned. Defaults to None.
-        targetid (int, optional): An optional actor ID to filter to. If set, only events where the ID matches the target (or source for damage-taken) of the event will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-        targetinstance (int, optional): An optional actor instance ID to filter to. If set, only events where the instance ID matches the target (or source for damage-taken) of the event will be returned. This is useful to look for all events involving NPC N, where N is the actor instance ID. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-        targetclass (str, optional): An optional actor class to filter to. If set, only events where the target (or source for damage-taken) involves that class (e.g., Mage) will be returned. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-        abilityid (int, optional): An optional ability ID to filter to. If set, only events where the ability matches will be returned. Consolidated abilities (WCL only) are represented using a negative number that matches the ability ID that everything is consolidated under. For the &#39;deaths&#39; view, this represents a specific killing blow. For the resources views, the abilityid is not an ability but a resource type. Valid resource types can be viewed at https://www.warcraftlogs.com/reports/resource_types/ Defaults to None.
-        options (int, optional): A set of options for what to include/exclude. These correspond to options like Include Overkill in the Damage Done pane. Complete list will be forthcoming. If omitted, appropriate defaults that match WCL&#39;s default behavior will be chosen. This value is not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views. Defaults to None.
-        cutoff (int, optional): An optional death cutoff. If set, events after that number of deaths have occurred will not be examined. Defaults to None.
-        encounter (int, optional): An optional encounter filter. If set to a specific encounter ID, only fights involving a specific encounter will be considered. The encounter IDs match those used in rankings/statistics. Defaults to None.
-        wipes (int, optional): An optional wipes filter. If set to 1, only wipes will be considered. Defaults to None.
-        filter_exp (str, optional): An optional filter written in WCL&#39;s expression language. Events must match the filter to be included. Defaults to None.
-        translate (bool, optional): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.onal): An optional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.tional flag indicating that the results should be translated into the language of the host (e.g., cn.warcraftlogs.com would get Chinese results). Defaults to None.
-        endpoint (str, optional): endpoint for the request. Defaults to r&#39;report/tables/:view/:report_code&#39;.
+        report_code (str): report code for the which the tables are to be
+            found.
+        start_time (int, optional): A start time. This is a time from the
+            start of the report in milliseconds. If omitted, 0 is assumed.
+            Defaults to None.
+        end_time (int, optional): An end time. This is a time from the
+            start of the report in milliseconds. If omitted, 0 is assumed.
+            Defaults to None.
+        hostility (int, optional): An optional hostility value of 0 or 1.
+            The default is 0. A value of 0 means to collect data for
+            Friendlies. A value of 1 means to collect data for Enemies.
+            Defaults to None.
+        by (str, optional): An optional parameter indicating how to group
+            entries. They can be grouped by &#39;source&#39;, by &#39;target&#39;, or by
+            &#39;ability&#39;. This value matches WCL&#39;s default behavior if
+            omitted. For buffs and debuffs, a value of &#39;source&#39; means auras
+            gained by the source, and a value of &#39;target&#39; means auras cast
+            by the source. This value is not used in the &#39;deaths&#39;,
+            &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39; views.
+            Defaults to None.
+        sourceid (int, optional): An optional actor ID to filter to. If
+            set, only events where the ID matches the source (or target for
+            damage-taken) of the event will be returned. The actor&#39;s pets
+            will also be included (unless the options field overrides).
+            Defaults to None.
+        sourceinstance (int, optional): An optional actor instance ID to
+            filter to. If set, only events where the instance ID matches
+            the source (or target for damage-taken) of the event will be
+            returned. This is useful to look for all events involving NPC
+            N, where N is the actor instance ID. Defaults to None.
+        sourceclass (str, optional): An optional actor class to filter to.
+            If set, only events where the source (or target for
+            damage-taken) involves that class (e.g., Mage) will be
+            returned. Defaults to None.
+        targetid (int, optional): An optional actor ID to filter to. If
+            set, only events where the ID matches the target (or source
+            for damage-taken) of the event will be returned. This value is
+            not used in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+            &#39;resources-gains&#39; views. Defaults to None.
+        targetinstance (int, optional): An optional actor instance ID to
+            filter to. If set, only events where the instance ID matches
+            the target (or source for damage-taken) of the event will be
+            returned. This is useful to look for all events involving NPC
+            N, where N is the actor instance ID. This value is not used in
+            the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+            &#39;resources-gains&#39; views. Defaults to None.
+        targetclass (str, optional): An optional actor class to filter to.
+            If set, only events where the target (or source for
+            damage-taken) involves that class (e.g., Mage) will be
+            returned. This value is not used in the &#39;deaths&#39;,
+            &#39;survivability&#39;, &#39;resources&#39; and &#39;resources-gains&#39;
+            views. Defaults to None.
+        abilityid (int, optional): An optional ability ID to filter to.
+            If set, only events where the ability matches will be
+            returned. Consolidated abilities (WCL only) are represented
+            using a negative number that matches the ability ID that
+            everything is consolidated under. For the &#39;deaths&#39; view, this
+            represents a specific killing blow. For the resources views,
+            the abilityid is not an ability but a resource type. Valid
+            resource types can be viewed at
+            https://www.warcraftlogs.com/reports/resource_types/
+            Defaults to None.
+        options (int, optional): A set of options for what to
+            include/exclude. These correspond to options like Include
+            Overkill in the Damage Done pane. Complete list will be
+            forthcoming. If omitted, appropriate defaults that match
+            WCL&#39;s default behavior will be chosen. This value is not used
+            in the &#39;deaths&#39;, &#39;survivability&#39;, &#39;resources&#39; and
+            &#39;resources-gains&#39; views. Defaults to None.
+        cutoff (int, optional): An optional death cutoff. If set, events
+            after that number of deaths have occurred will not be examined.
+            Defaults to None.
+        encounter (int, optional): An optional encounter filter. If set to
+            a specific encounter ID, only fights involving a specific
+            encounter will be considered. The encounter IDs match those
+            used in rankings/statistics. Defaults to None.
+        wipes (int, optional): An optional wipes filter. If set to 1, only
+            wipes will be considered. Defaults to None.
+        filter_exp (str, optional): An optional filter written in WCL&#39;s
+            expression language. Events must match the filter to be
+            included. Defaults to None.
+        translate (bool, optional): An optional flag indicating that the
+            results should be translated into the language of the host
+            (e.g., cn.warcraftlogs.com would get Chinese results).
+            Defaults to None
+        endpoint (str, optional): endpoint for the request.
+            Defaults to r&#39;report/tables/:view/:report_code&#39;.
 
     Raises:
         ValueError: If the Api class is not initialized prior to execution.
-        ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+        ConnectionError: Different Connectionerrors based on retrieved
+            ApiErrors.
 
     Returns:
         dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -1718,29 +2619,47 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
     headers = {}
 
-    endpoint = endpoint.replace(&#39;:view&#39;, view).replace(&#34;:report_code&#34;, report_code)
+    endpoint = endpoint.replace(&#39;:view&#39;, view).replace(
+        &#34;:report_code&#34;, report_code)
 
     params = {}
 
-    if start_time is not None: params.update({&#39;start&#39; : start_time})
-    if end_time is not None: params.update({&#39;end&#39; : end_time})
-    if hostility is not None: params.update({&#39;hostility&#39; : hostility})
-    if by is not None: params.update({&#39;by&#39; : by})
-    if sourceid is not None: params.update({&#39;sourceid&#39; : sourceid})
-    if sourceinstance is not None: params.update({&#39;sourceinstance&#39; : sourceinstance})
-    if sourceclass is not None: params.update({&#39;sourceclass&#39; : sourceclass})
-    if targetid is not None: params.update({&#39;targetid&#39; : targetid})
-    if targetinstance is not None: params.update({&#39;targetinstance&#39; : targetinstance})
-    if targetclass is not None: params.update({&#39;targetclass&#39; : targetclass})
-    if abilityid is not None: params.update({&#39;abilityid&#39; : abilityid})
-    if options is not None: params.update({&#39;options&#39; : options})
-    if cutoff is not None: params.update({&#39;cutoff&#39; : cutoff})
-    if encounter is not None: params.update({&#39;encounter&#39; : encounter})
-    if wipes is not None: params.update({&#39;wipes&#39; : wipes})
-    if filter_exp is not None: params.update({&#39;filter&#39; : filter_exp})
-    if translate is not None: params.update({&#39;translate&#39; : translate})
+    if start_time is not None:
+        params.update({&#39;start&#39;: start_time})
+    if end_time is not None:
+        params.update({&#39;end&#39;: end_time})
+    if hostility is not None:
+        params.update({&#39;hostility&#39;: hostility})
+    if by is not None:
+        params.update({&#39;by&#39;: by})
+    if sourceid is not None:
+        params.update({&#39;sourceid&#39;: sourceid})
+    if sourceinstance is not None:
+        params.update({&#39;sourceinstance&#39;: sourceinstance})
+    if sourceclass is not None:
+        params.update({&#39;sourceclass&#39;: sourceclass})
+    if targetid is not None:
+        params.update({&#39;targetid&#39;: targetid})
+    if targetinstance is not None:
+        params.update({&#39;targetinstance&#39;: targetinstance})
+    if targetclass is not None:
+        params.update({&#39;targetclass&#39;: targetclass})
+    if abilityid is not None:
+        params.update({&#39;abilityid&#39;: abilityid})
+    if options is not None:
+        params.update({&#39;options&#39;: options})
+    if cutoff is not None:
+        params.update({&#39;cutoff&#39;: cutoff})
+    if encounter is not None:
+        params.update({&#39;encounter&#39;: encounter})
+    if wipes is not None:
+        params.update({&#39;wipes&#39;: wipes})
+    if filter_exp is not None:
+        params.update({&#39;filter&#39;: filter_exp})
+    if translate is not None:
+        params.update({&#39;translate&#39;: translate})
 
-    params.update({&#39;api_key&#39; : api_key})
+    params.update({&#39;api_key&#39;: api_key})
 
     resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -1751,9 +2670,9 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
     if resp.status_code == 401:
         raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-    raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                          &#34; and message : {}&#34;.format(resp.content) +
-                          &#34; for endpoint: {}&#34;.format(endpoint))</code></pre>
+    raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                          f&#34; and message : {resp.content}&#34;
+                          f&#34; for endpoint: {endpoint}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="WCLApi.Warcraftlogs.WCLApi.get_zones"><code class="name flex">
@@ -1771,7 +2690,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 <dt><code>ValueError</code></dt>
 <dd>If the Api class is not initialized prior to execution.</dd>
 <dt><code>ConnectionError</code></dt>
-<dd>Different Connectionerrors based on retrieved ApiErrors.</dd>
+<dd>Different Connectionerrors based on retrieved
+ApiErrors.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>dict(JsonApiObject): JsonApi object in the form of a dict.</p></div>
@@ -1788,7 +2708,8 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
 
     Raises:
         ValueError: If the Api class is not initialized prior to execution.
-        ConnectionError: Different Connectionerrors based on retrieved ApiErrors.
+        ConnectionError: Different Connectionerrors based on retrieved
+            ApiErrors.
 
     Returns:
         dict(JsonApiObject): JsonApi object in the form of a dict.
@@ -1804,7 +2725,7 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
     cont = None
 
     params = {}
-    params.update({&#39;api_key&#39; : api_key})
+    params.update({&#39;api_key&#39;: api_key})
 
     resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -1815,9 +2736,9 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
     if resp.status_code == 401:
         raise ConnectionError(&#34;Renew authorization token.&#34;)
 
-    raise ConnectionError(&#34;Request failed with code {}&#34;.format(resp.status_code) +
-                          &#34; and message : {}&#34;.format(resp.content) +
-                          &#34; for endpoint: {}&#34;.format(endpoint))</code></pre>
+    raise ConnectionError(f&#34;Request failed with code {resp.status_code}&#34;
+                          f&#34; and message : {resp.content}&#34;
+                          f&#34; for endpoint: {endpoint}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="WCLApi.Warcraftlogs.WCLApi.load_saved_query"><code class="name flex">
@@ -1853,9 +2774,9 @@ Defaults to r'https://classic.warcraftlogs.com:443/v1/'</dd>
     arg_str = &#39;_&#39;.join([argspec.locals[&#39;report_code&#39;]] +
                        [str(argspec.locals[arg])
                         for arg in argspec.args if
-                            argspec.locals[arg] is not None and
-                            not isinstance(argspec.locals[arg], WCLApi) and
-                            arg not in [&#39;endpoint&#39;, &#39;report_code&#39;, &#39;view&#39;]] +
+                        argspec.locals[arg] is not None and
+                        not isinstance(argspec.locals[arg], WCLApi) and
+                        arg not in [&#39;endpoint&#39;, &#39;report_code&#39;, &#39;view&#39;]] +
                        [argspec.locals[&#39;view&#39;]])
     return f&#34;wcl_{query}_{arg_str}.json&#34;</code></pre>
 </details>

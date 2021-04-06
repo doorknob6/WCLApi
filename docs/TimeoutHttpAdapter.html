@@ -28,7 +28,10 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;Module containing the timeout http adapter for this package.&#34;&#34;&#34;
+import logging
 from requests.adapters import HTTPAdapter
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 0.5 # seconds
 
@@ -60,7 +63,7 @@ class TimeoutHttpAdapter(HTTPAdapter):
 
         Returns:
             request: with timeout attached.
-        &#34;&#34;&#34;        &#34;&#34;
+        &#34;&#34;&#34;
         timeout = kwargs.get(&#34;timeout&#34;)
         if timeout is None:
             kwargs[&#34;timeout&#34;] = self.timeout
@@ -122,7 +125,7 @@ class TimeoutHttpAdapter(HTTPAdapter):
 
         Returns:
             request: with timeout attached.
-        &#34;&#34;&#34;        &#34;&#34;
+        &#34;&#34;&#34;
         timeout = kwargs.get(&#34;timeout&#34;)
         if timeout is None:
             kwargs[&#34;timeout&#34;] = self.timeout
@@ -163,7 +166,7 @@ class TimeoutHttpAdapter(HTTPAdapter):
 
     Returns:
         request: with timeout attached.
-    &#34;&#34;&#34;        &#34;&#34;
+    &#34;&#34;&#34;
     timeout = kwargs.get(&#34;timeout&#34;)
     if timeout is None:
         kwargs[&#34;timeout&#34;] = self.timeout
