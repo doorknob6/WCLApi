@@ -11,19 +11,23 @@ import sys
 logger = logging.getLogger(__name__)
 
 
-class WCLApi():
+class WCLApi:
     """This class provides the base class for API calls."""
 
-    def __init__(self, api_key,
-                 query_dir=None,
-                 base_url=r'https://classic.warcraftlogs.com:443/v1/',
-                 timeout=1):
+    def __init__(
+        self,
+        api_key,
+        query_dir=None,
+        base_url=r"https://classic.warcraftlogs.com:443/v1/",
+        timeout=1,
+    ):
         """
         Initialize the WCLApi class and optionally attach an authentication token.
 
         Args:
             api_key (str): Authentication api_key.
-            query_dir (str, optional): Path to the directory where queries should be stored.
+            query_dir (str, optional): Path to the directory where queries should be
+                stored.
             base_url (str, optional): Base URL for calls to the API.
                 Defaults to r'https://classic.warcraftlogs.com:443/v1/'
             timeout (float, optional): Default timeout for API calls. Defaults to 1.
@@ -34,21 +38,31 @@ class WCLApi():
         """
         assert api_key is not None, "Please enter an api_key"
         self.api_key = api_key
-        self.query_dir = os.path.join(
-            sys.path[0], 'saved_queries') if query_dir is None else query_dir
+        self.query_dir = (
+            os.path.join(sys.path[0], "saved_queries")
+            if query_dir is None
+            else query_dir
+        )
         self.http = sessions.BaseUrlSession(base_url)
-        self.http.hooks['response'] = [lambda response,
-                                       *args, **kwargs: response.raise_for_status()]
-        retries = Retry(total=6, backoff_factor=1,
-                        status_forcelist=[429, 500, 502, 503, 504])
+        self.http.hooks["response"] = [
+            lambda response, *args, **kwargs: response.raise_for_status()
+        ]
+        retries = Retry(
+            total=6, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504]
+        )
         adapter = TimeoutHttpAdapter(timeout=timeout, max_retries=retries)
         self.http.mount("https://", adapter)
         self.http.mount("http://", adapter)
 
-    def get_guild_reports(self, server, server_region, guild_name,
-                          start_time=None,
-                          end_time=None,
-                          endpoint=r'reports/guild/:guildName/:serverName/:serverRegion'):
+    def get_guild_reports(
+        self,
+        server,
+        server_region,
+        guild_name,
+        start_time=None,
+        end_time=None,
+        endpoint=r"reports/guild/:guildName/:serverName/:serverRegion",
+    ):
         """
         Send a GET /reports/guild request to the API, returns the guild reports.
 
@@ -84,19 +98,19 @@ class WCLApi():
 
         headers = {}
 
-        endpoint = endpoint.replace(":serverName",
-                                    server.lower().replace(' ', '-')
-                                    ).replace(":serverRegion", server_region
-                                              ).replace(":guildName",
-                                                        guild_name)
+        endpoint = (
+            endpoint.replace(":serverName", server.lower().replace(" ", "-"))
+            .replace(":serverRegion", server_region)
+            .replace(":guildName", guild_name)
+        )
 
         params = {}
 
-        params.update({'api_key': api_key})
+        params.update({"api_key": api_key})
         if start_time is not None:
-            params.update({'start': start_time})
+            params.update({"start": start_time})
         if end_time is not None:
-            params.update({'end': end_time})
+            params.update({"end": end_time})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -107,12 +121,13 @@ class WCLApi():
         if resp.status_code == 401:
             raise ConnectionError("Renew authorization token.")
 
-        raise ConnectionError(f"Request failed with code {resp.status_code}"
-                              f" and message : {resp.content}"
-                              f" for endpoint: {endpoint}")
+        raise ConnectionError(
+            f"Request failed with code {resp.status_code}"
+            f" and message : {resp.content}"
+            f" for endpoint: {endpoint}"
+        )
 
-    def get_report_fights(self, report_code,
-                          endpoint=r'report/fights/:report_code'):
+    def get_report_fights(self, report_code, endpoint=r"report/fights/:report_code"):
         """
         Send a GET /report/fights request to the API, returns the report
         fights.
@@ -142,7 +157,7 @@ class WCLApi():
 
         params = {}
 
-        params.update({'api_key': api_key})
+        params.update({"api_key": api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -153,29 +168,35 @@ class WCLApi():
         if resp.status_code == 401:
             raise ConnectionError("Renew authorization token.")
 
-        raise ConnectionError(f"Request failed with code {resp.status_code}"
-                              f" and message : {resp.content}"
-                              f" for endpoint: {endpoint}")
+        raise ConnectionError(
+            f"Request failed with code {resp.status_code}"
+            f" and message : {resp.content}"
+            f" for endpoint: {endpoint}"
+        )
 
-    def get_report_events(self, view, report_code,
-                          start_time=None,
-                          end_time=None,
-                          hostility=None,
-                          sourceid=None,
-                          sourceinstance=None,
-                          sourceclass=None,
-                          targetid=None,
-                          targetinstance=None,
-                          targetclass=None,
-                          abilityid=None,
-                          death=None,
-                          options=None,
-                          cutoff=None,
-                          encounter=None,
-                          wipes=None,
-                          filter_exp=None,
-                          translate=None,
-                          endpoint='report/events/:view/:report_code'):
+    def get_report_events(
+        self,
+        view,
+        report_code,
+        start_time=None,
+        end_time=None,
+        hostility=None,
+        sourceid=None,
+        sourceinstance=None,
+        sourceclass=None,
+        targetid=None,
+        targetinstance=None,
+        targetclass=None,
+        abilityid=None,
+        death=None,
+        options=None,
+        cutoff=None,
+        encounter=None,
+        wipes=None,
+        filter_exp=None,
+        translate=None,
+        endpoint="report/events/:view/:report_code",
+    ):
         """
         Send a GET /report/events request to the API, returns the report events.
 
@@ -279,76 +300,77 @@ class WCLApi():
             raise ValueError("Please initialise the Api class.")
 
         argspec = inspect.getargvalues(inspect.currentframe())
-        cont = self.load_saved_query('events', argspec)
+        cont = self.load_saved_query("events", argspec)
 
         if cont is not None:
             return cont
 
         headers = {}
 
-        endpoint = endpoint.replace(':view', view).replace(
-            ":report_code", report_code)
+        endpoint = endpoint.replace(":view", view).replace(":report_code", report_code)
 
         params = {}
 
         if start_time is not None:
-            params.update({'start': start_time})
+            params.update({"start": start_time})
         if end_time is not None:
-            params.update({'end': end_time})
+            params.update({"end": end_time})
         if hostility is not None:
-            params.update({'hostility': hostility})
+            params.update({"hostility": hostility})
         if sourceid is not None:
-            params.update({'sourceid': sourceid})
+            params.update({"sourceid": sourceid})
         if sourceinstance is not None:
-            params.update({'sourceinstance': sourceinstance})
+            params.update({"sourceinstance": sourceinstance})
         if sourceclass is not None:
-            params.update({'sourceclass': sourceclass})
+            params.update({"sourceclass": sourceclass})
         if targetid is not None:
-            params.update({'targetid': targetid})
+            params.update({"targetid": targetid})
         if targetinstance is not None:
-            params.update({'targetinstance': targetinstance})
+            params.update({"targetinstance": targetinstance})
         if targetclass is not None:
-            params.update({'targetclass': targetclass})
+            params.update({"targetclass": targetclass})
         if abilityid is not None:
-            params.update({'abilityid': abilityid})
+            params.update({"abilityid": abilityid})
         if death is not None:
-            params.update({'death': death})
+            params.update({"death": death})
         if options is not None:
-            params.update({'options': options})
+            params.update({"options": options})
         if cutoff is not None:
-            params.update({'cutoff': cutoff})
+            params.update({"cutoff": cutoff})
         if encounter is not None:
-            params.update({'encounter': encounter})
+            params.update({"encounter": encounter})
         if wipes is not None:
-            params.update({'wipes': wipes})
+            params.update({"wipes": wipes})
         if filter_exp is not None:
-            params.update({'filter': filter_exp})
+            params.update({"filter": filter_exp})
         if translate is not None:
-            params.update({'translate': translate})
+            params.update({"translate": translate})
 
-        params.update({'api_key': api_key})
+        params.update({"api_key": api_key})
 
         next_timestamp = -1
-        resp = ''
+        resp = ""
 
         while next_timestamp != 0:
 
             if next_timestamp > 0:
-                params.update({'start': next_timestamp})
+                params.update({"start": next_timestamp})
 
             resp = self.http.get(endpoint, headers=headers, params=params)
 
             if resp.status_code == 200:
                 resp_json = resp.json()
                 if cont is not None:
-                    cont['events'] += resp_json['events']
+                    cont["events"] += resp_json["events"]
                 else:
                     cont = resp.json()
 
                 try:
-                    next_timestamp = resp_json['nextPageTimestamp']
-                    logger.info("Loaded from new timestamp: "
-                                f"{resp_json['nextPageTimestamp']}")
+                    next_timestamp = resp_json["nextPageTimestamp"]
+                    logger.info(
+                        "Loaded from new timestamp: "
+                        f"{resp_json['nextPageTimestamp']}"
+                    )
                 except KeyError:
                     next_timestamp = 0
             else:
@@ -356,35 +378,41 @@ class WCLApi():
 
         if resp:
             if resp.status_code == 200:
-                self.save_query('events', argspec, cont)
+                self.save_query("events", argspec, cont)
                 return cont
 
             if resp.status_code == 401:
                 raise ConnectionError("Renew authorization token.")
 
-        raise ConnectionError(f"Request failed with code {resp.status_code}"
-                              f" and message : {resp.content}"
-                              f" for endpoint: {endpoint}")
+        raise ConnectionError(
+            f"Request failed with code {resp.status_code}"
+            f" and message : {resp.content}"
+            f" for endpoint: {endpoint}"
+        )
 
-    def get_report_tables(self, view, report_code,
-                          start_time=None,
-                          end_time=None,
-                          hostility=None,
-                          by=None,
-                          sourceid=None,
-                          sourceinstance=None,
-                          sourceclass=None,
-                          targetid=None,
-                          targetinstance=None,
-                          targetclass=None,
-                          abilityid=None,
-                          options=None,
-                          cutoff=None,
-                          encounter=None,
-                          wipes=None,
-                          filter_exp=None,
-                          translate=None,
-                          endpoint='report/tables/:view/:report_code'):
+    def get_report_tables(
+        self,
+        view,
+        report_code,
+        start_time=None,
+        end_time=None,
+        hostility=None,
+        by=None,
+        sourceid=None,
+        sourceinstance=None,
+        sourceclass=None,
+        targetid=None,
+        targetinstance=None,
+        targetclass=None,
+        abilityid=None,
+        options=None,
+        cutoff=None,
+        encounter=None,
+        wipes=None,
+        filter_exp=None,
+        translate=None,
+        endpoint="report/tables/:view/:report_code",
+    ):
         """
         Send a GET /report/tables request to the API, returns the report
         tables.
@@ -495,47 +523,46 @@ class WCLApi():
 
         headers = {}
 
-        endpoint = endpoint.replace(':view', view).replace(
-            ":report_code", report_code)
+        endpoint = endpoint.replace(":view", view).replace(":report_code", report_code)
 
         params = {}
 
         if start_time is not None:
-            params.update({'start': start_time})
+            params.update({"start": start_time})
         if end_time is not None:
-            params.update({'end': end_time})
+            params.update({"end": end_time})
         if hostility is not None:
-            params.update({'hostility': hostility})
+            params.update({"hostility": hostility})
         if by is not None:
-            params.update({'by': by})
+            params.update({"by": by})
         if sourceid is not None:
-            params.update({'sourceid': sourceid})
+            params.update({"sourceid": sourceid})
         if sourceinstance is not None:
-            params.update({'sourceinstance': sourceinstance})
+            params.update({"sourceinstance": sourceinstance})
         if sourceclass is not None:
-            params.update({'sourceclass': sourceclass})
+            params.update({"sourceclass": sourceclass})
         if targetid is not None:
-            params.update({'targetid': targetid})
+            params.update({"targetid": targetid})
         if targetinstance is not None:
-            params.update({'targetinstance': targetinstance})
+            params.update({"targetinstance": targetinstance})
         if targetclass is not None:
-            params.update({'targetclass': targetclass})
+            params.update({"targetclass": targetclass})
         if abilityid is not None:
-            params.update({'abilityid': abilityid})
+            params.update({"abilityid": abilityid})
         if options is not None:
-            params.update({'options': options})
+            params.update({"options": options})
         if cutoff is not None:
-            params.update({'cutoff': cutoff})
+            params.update({"cutoff": cutoff})
         if encounter is not None:
-            params.update({'encounter': encounter})
+            params.update({"encounter": encounter})
         if wipes is not None:
-            params.update({'wipes': wipes})
+            params.update({"wipes": wipes})
         if filter_exp is not None:
-            params.update({'filter': filter_exp})
+            params.update({"filter": filter_exp})
         if translate is not None:
-            params.update({'translate': translate})
+            params.update({"translate": translate})
 
-        params.update({'api_key': api_key})
+        params.update({"api_key": api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -546,25 +573,30 @@ class WCLApi():
         if resp.status_code == 401:
             raise ConnectionError("Renew authorization token.")
 
-        raise ConnectionError(f"Request failed with code {resp.status_code}"
-                              f" and message : {resp.content}"
-                              f" for endpoint: {endpoint}")
+        raise ConnectionError(
+            f"Request failed with code {resp.status_code}"
+            f" and message : {resp.content}"
+            f" for endpoint: {endpoint}"
+        )
 
-    def get_encounter_rankings(self, encounter_id,
-                               metric='speed',
-                               size=None,
-                               difficulty=None,
-                               partition=None,
-                               game_class=None,
-                               spec=None,
-                               bracket=None,
-                               server=None,
-                               region=None,
-                               page=None,
-                               limit=None,
-                               filter=None,
-                               include_combatant_info=False,
-                               endpoint='rankings/encounter/:encounter_id'):
+    def get_encounter_rankings(
+        self,
+        encounter_id,
+        metric="speed",
+        size=None,
+        difficulty=None,
+        partition=None,
+        game_class=None,
+        spec=None,
+        bracket=None,
+        server=None,
+        region=None,
+        page=None,
+        limit=None,
+        filter=None,
+        include_combatant_info=False,
+        endpoint="rankings/encounter/:encounter_id",
+    ):
         """
         Send a GET /rankings/encounter request to the API, returns the
         encounter rankings.
@@ -635,38 +667,38 @@ class WCLApi():
 
         headers = {}
 
-        endpoint = endpoint.replace(':encounter_id', str(encounter_id))
+        endpoint = endpoint.replace(":encounter_id", str(encounter_id))
 
         params = {}
 
         if metric is not None:
-            params.update({'metric': metric})
+            params.update({"metric": metric})
         if size is not None:
-            params.update({'size': size})
+            params.update({"size": size})
         if difficulty is not None:
-            params.update({'difficulty': difficulty})
+            params.update({"difficulty": difficulty})
         if partition is not None:
-            params.update({'partition': partition})
+            params.update({"partition": partition})
         if game_class is not None:
-            params.update({'class': game_class})
+            params.update({"class": game_class})
         if spec is not None:
-            params.update({'spec': spec})
+            params.update({"spec": spec})
         if bracket is not None:
-            params.update({'bracket': bracket})
+            params.update({"bracket": bracket})
         if server is not None:
-            params.update({'server': server})
+            params.update({"server": server})
         if region is not None:
-            params.update({'region': region})
+            params.update({"region": region})
         if page is not None:
-            params.update({'page': page})
+            params.update({"page": page})
         if limit is not None:
-            params.update({'limit': limit})
+            params.update({"limit": limit})
         if filter is not None:
-            params.update({'filter': filter})
+            params.update({"filter": filter})
         if include_combatant_info is not None:
-            params.update({'includeCombatantInfo': include_combatant_info})
+            params.update({"includeCombatantInfo": include_combatant_info})
 
-        params.update({'api_key': api_key})
+        params.update({"api_key": api_key})
 
         resp = None
         cont = None
@@ -681,29 +713,35 @@ class WCLApi():
                 resp_json = resp.json()
 
                 if cont is not None:
-                    cont['rankings'] += resp_json['rankings']
+                    cont["rankings"] += resp_json["rankings"]
                 else:
                     cont = resp_json
 
-                next_page = resp_json['hasMorePages']
+                next_page = resp_json["hasMorePages"]
 
-                params.update({'page': resp_json['page'] + 1})
-                logger.info(f"Additional page loaded: {resp_json['page'] + 1}")
+                params.update({"page": resp_json["page"] + 1})
+                logger.debug(f"Additional page loaded: {resp_json['page'] + 1}")
             else:
                 break
 
         if resp:
             if resp.status_code == 200:
+                logger.debug(
+                    f"Content obtained successfully: {len(cont['rankings'])} rankings "
+                    "found"
+                )
                 return cont
 
             if resp.status_code == 401:
                 raise ConnectionError("Renew authorization token.")
 
-        raise ConnectionError(f"Request failed with code {resp.status_code}"
-                              f" and message : {resp.content}"
-                              f" for endpoint: {endpoint}")
+        raise ConnectionError(
+            f"Request failed with code {resp.status_code}"
+            f" and message : {resp.content}"
+            f" for endpoint: {endpoint}"
+        )
 
-    def get_zones(self, endpoint=r'zones'):
+    def get_zones(self, endpoint=r"zones"):
         """
         Send a /zones request to the API, returns the available zones.
 
@@ -729,7 +767,7 @@ class WCLApi():
         cont = None
 
         params = {}
-        params.update({'api_key': api_key})
+        params.update({"api_key": api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
 
@@ -740,9 +778,11 @@ class WCLApi():
         if resp.status_code == 401:
             raise ConnectionError("Renew authorization token.")
 
-        raise ConnectionError(f"Request failed with code {resp.status_code}"
-                              f" and message : {resp.content}"
-                              f" for endpoint: {endpoint}")
+        raise ConnectionError(
+            f"Request failed with code {resp.status_code}"
+            f" and message : {resp.content}"
+            f" for endpoint: {endpoint}"
+        )
 
     def load_saved_query(self, query, argspec):
         cont = None
@@ -750,7 +790,7 @@ class WCLApi():
         if os.path.isdir(self.query_dir):
             f_path = os.path.join(self.query_dir, f_name)
             if os.path.isfile(f_path):
-                with open(f_path, 'r') as f:
+                with open(f_path, "r") as f:
                     cont = json.load(f)
         return cont
 
@@ -759,15 +799,19 @@ class WCLApi():
         if not os.path.isdir(self.query_dir):
             os.mkdir(self.query_dir)
         f_path = os.path.join(self.query_dir, f_name)
-        with open(f_path, 'w') as f:
+        with open(f_path, "w") as f:
             json.dump(cont, f)
 
     def make_file_name(self, argspec, query):
-        arg_str = '_'.join([argspec.locals['report_code']] +
-                           [str(argspec.locals[arg])
-                            for arg in argspec.args if
-                            argspec.locals[arg] is not None and
-                            not isinstance(argspec.locals[arg], WCLApi) and
-                            arg not in ['endpoint', 'report_code', 'view']] +
-                           [argspec.locals['view']])
+        arg_str = "_".join(
+            [argspec.locals["report_code"]]
+            + [
+                str(argspec.locals[arg])
+                for arg in argspec.args
+                if argspec.locals[arg] is not None
+                and not isinstance(argspec.locals[arg], WCLApi)
+                and arg not in ["endpoint", "report_code", "view"]
+            ]
+            + [argspec.locals["view"]]
+        )
         return f"wcl_{query}_{arg_str}.json"
