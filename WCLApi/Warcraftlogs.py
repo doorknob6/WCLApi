@@ -38,11 +38,7 @@ class WCLApi:
         """
         assert api_key is not None, "Please enter an api_key"
         self.api_key = api_key
-        self.query_dir = (
-            os.path.join(sys.path[0], "saved_queries")
-            if query_dir is None
-            else query_dir
-        )
+        self.query_dir = query_dir
         self.http = sessions.BaseUrlSession(base_url)
         self.http.hooks["response"] = [
             lambda response, *args, **kwargs: response.raise_for_status()
@@ -785,16 +781,20 @@ class WCLApi:
         )
 
     def load_saved_query(self, query, argspec):
-        cont = None
+        if self.query_dir is None:
+            return None
         f_name = self.make_file_name(argspec, query)
-        if os.path.isdir(self.query_dir):
-            f_path = os.path.join(self.query_dir, f_name)
-            if os.path.isfile(f_path):
-                with open(f_path, "r") as f:
-                    cont = json.load(f)
-        return cont
+        if not os.path.isdir(self.query_dir):
+            return None
+        f_path = os.path.join(self.query_dir, f_name)
+        if not os.path.isfile(f_path):
+            return None
+        with open(f_path, "r") as f:
+            return json.load(f)
 
     def save_query(self, query, argspec, cont):
+        if self.query_dir is None:
+            return None
         f_name = self.make_file_name(argspec, query)
         if not os.path.isdir(self.query_dir):
             os.mkdir(self.query_dir)
