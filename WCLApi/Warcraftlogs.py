@@ -713,10 +713,10 @@ class WCLApi:
                 else:
                     cont = resp_json
 
-                next_page = resp_json["hasMorePages"]
 
-                params.update({"page": resp_json["page"] + 1})
-                logger.debug(f"Additional page loaded: {resp_json['page'] + 1}")
+                if next_page:= resp_json["hasMorePages"]:
+                    params.update({"page": resp_json["page"] + 1})
+                    logger.debug(f"Additional page loaded: {resp_json['page'] + 1}")
             else:
                 break
 
