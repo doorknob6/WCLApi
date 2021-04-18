@@ -1,10 +1,9 @@
 from distutils.core import setup
-from WCLApi import __version__
 
 setup(
     name="WCLApi",
     packages=["WCLApi"],
-    version=__version__,
+    version="0.4.0",
     license="MIT",
     description="Python tools to communicate with the Wacraftlogs website API.",
     author="doorknob6",
