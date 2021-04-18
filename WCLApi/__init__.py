@@ -1,3 +1,3 @@
-__version__ = "0.3.12"
+__version__ = "0.4.0"
 from WCLApi.TimeoutHttpAdapter import TimeoutHttpAdapter
 from WCLApi.Warcraftlogs import WCLApi

@@ -1,4 +1,6 @@
 """Module containing the base Api class."""
+from typing import Any, Dict, Iterable, List, Optional, Union
+from requests.models import Response
 from urllib3.util.retry import Retry
 from requests_toolbelt import sessions
 from WCLApi.TimeoutHttpAdapter import TimeoutHttpAdapter
@@ -6,7 +8,6 @@ import inspect
 import json
 import logging
 import os
-import sys
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +17,11 @@ class WCLApi:
 
     def __init__(
         self,
-        api_key,
-        query_dir=None,
-        base_url=r"https://classic.warcraftlogs.com:443/v1/",
-        timeout=1,
-    ):
+        api_key: str,
+        query_dir: Optional[str] = None,
+        base_url: Optional[str] = r"https://classic.warcraftlogs.com:443/v1/",
+        timeout: Optional[int] = 1,
+    ) -> None:
         """
         Initialize the WCLApi class and optionally attach an authentication token.
 
@@ -52,13 +53,13 @@ class WCLApi:
 
     def get_guild_reports(
         self,
-        server,
-        server_region,
-        guild_name,
-        start_time=None,
-        end_time=None,
-        endpoint=r"reports/guild/:guildName/:serverName/:serverRegion",
-    ):
+        server: str,
+        server_region: str,
+        guild_name: str,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+        endpoint: str = r"reports/guild/:guildName/:serverName/:serverRegion",
+    ) -> List:
         """
         Send a GET /reports/guild request to the API, returns the guild reports.
 
@@ -92,7 +93,7 @@ class WCLApi:
         except AttributeError:
             raise ValueError("Please initialise the Api class.")
 
-        headers = {}
+        headers: Dict[str, Union[str, int]] = {}
 
         endpoint = (
             endpoint.replace(":serverName", server.lower().replace(" ", "-"))
@@ -100,7 +101,7 @@ class WCLApi:
             .replace(":guildName", guild_name)
         )
 
-        params = {}
+        params: Dict[str, Union[str, int]] = {}
 
         params.update({"api_key": api_key})
         if start_time is not None:
@@ -123,7 +124,9 @@ class WCLApi:
             f" for endpoint: {endpoint}"
         )
 
-    def get_report_fights(self, report_code, endpoint=r"report/fights/:report_code"):
+    def get_report_fights(
+        self, report_code: str, endpoint: str = r"report/fights/:report_code"
+    ) -> dict:
         """
         Send a GET /report/fights request to the API, returns the report
         fights.
@@ -147,11 +150,11 @@ class WCLApi:
         except AttributeError:
             raise ValueError("Please initialise the Api class.")
 
-        headers = {}
+        headers: Dict[str, Union[str, int]] = {}
 
         endpoint = endpoint.replace(":report_code", report_code)
 
-        params = {}
+        params: Dict[str, Union[str, int]] = {}
 
         params.update({"api_key": api_key})
 
@@ -172,27 +175,27 @@ class WCLApi:
 
     def get_report_events(
         self,
-        view,
-        report_code,
-        start_time=None,
-        end_time=None,
-        hostility=None,
-        sourceid=None,
-        sourceinstance=None,
-        sourceclass=None,
-        targetid=None,
-        targetinstance=None,
-        targetclass=None,
-        abilityid=None,
-        death=None,
-        options=None,
-        cutoff=None,
-        encounter=None,
-        wipes=None,
-        filter_exp=None,
-        translate=None,
-        endpoint="report/events/:view/:report_code",
-    ):
+        view: str,
+        report_code: str,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+        hostility: Optional[int] = None,
+        sourceid: Optional[int] = None,
+        sourceinstance: Optional[int] = None,
+        sourceclass: Optional[str] = None,
+        targetid: Optional[int] = None,
+        targetinstance: Optional[int] = None,
+        targetclass: Optional[str] = None,
+        abilityid: Optional[int] = None,
+        death: Optional[int] = None,
+        options: Optional[int] = None,
+        cutoff: Optional[int] = None,
+        encounter: Optional[int] = None,
+        wipes: Optional[int] = None,
+        filter_exp: Optional[str] = None,
+        translate: Optional[bool] = None,
+        endpoint: str = "report/events/:view/:report_code",
+    ) -> Union[Iterable[Dict], Dict[Any, Any]]:
         """
         Send a GET /report/events request to the API, returns the report events.
 
@@ -295,17 +298,18 @@ class WCLApi:
         except AttributeError:
             raise ValueError("Please initialise the Api class.")
 
-        argspec = inspect.getargvalues(inspect.currentframe())
-        cont = self.load_saved_query("events", argspec)
+        current_frame = inspect.currentframe()
+        if current_frame is not None:
+            argspec = inspect.getargvalues(current_frame)
+            content = self.load_saved_query("events", argspec)
+            if content is not None:
+                return content
 
-        if cont is not None:
-            return cont
-
-        headers = {}
+        headers: Dict[str, Union[str, int]] = {}
 
         endpoint = endpoint.replace(":view", view).replace(":report_code", report_code)
 
-        params = {}
+        params: Dict[str, Union[str, int]] = {}
 
         if start_time is not None:
             params.update({"start": start_time})
@@ -345,7 +349,8 @@ class WCLApi:
         params.update({"api_key": api_key})
 
         next_timestamp = -1
-        resp = ""
+        resp = None
+        cont: Dict = {}
 
         while next_timestamp != 0:
 
@@ -354,23 +359,25 @@ class WCLApi:
 
             resp = self.http.get(endpoint, headers=headers, params=params)
 
-            if resp.status_code == 200:
-                resp_json = resp.json()
-                if cont is not None:
-                    cont["events"] += resp_json["events"]
-                else:
-                    cont = resp.json()
+            if resp is not None:
 
-                try:
-                    next_timestamp = resp_json["nextPageTimestamp"]
-                    logger.info(
-                        "Loaded from new timestamp: "
-                        f"{resp_json['nextPageTimestamp']}"
-                    )
-                except KeyError:
-                    next_timestamp = 0
-            else:
-                break
+                if resp.status_code == 200:
+                    resp_json = resp.json()
+                    if cont is not None:
+                        cont["events"] += resp_json["events"]
+                    else:
+                        cont = resp.json()
+
+                    try:
+                        next_timestamp = resp_json["nextPageTimestamp"]
+                        logger.info(
+                            "Loaded from new timestamp: "
+                            f"{resp_json['nextPageTimestamp']}"
+                        )
+                    except KeyError:
+                        next_timestamp = 0
+                else:
+                    break
 
         if resp:
             if resp.status_code == 200:
@@ -380,35 +387,37 @@ class WCLApi:
             if resp.status_code == 401:
                 raise ConnectionError("Renew authorization token.")
 
-        raise ConnectionError(
-            f"Request failed with code {resp.status_code}"
-            f" and message : {resp.content}"
-            f" for endpoint: {endpoint}"
-        )
+        if resp is not None:
+            raise ConnectionError(
+                f"Request failed with code {resp.status_code}"
+                f" and message : {resp.content}"
+                f" for endpoint: {endpoint}"
+            )
+        raise ConnectionError(f"Request failed: response is None")
 
     def get_report_tables(
         self,
-        view,
-        report_code,
-        start_time=None,
-        end_time=None,
-        hostility=None,
-        by=None,
-        sourceid=None,
-        sourceinstance=None,
-        sourceclass=None,
-        targetid=None,
-        targetinstance=None,
-        targetclass=None,
-        abilityid=None,
-        options=None,
-        cutoff=None,
-        encounter=None,
-        wipes=None,
-        filter_exp=None,
-        translate=None,
-        endpoint="report/tables/:view/:report_code",
-    ):
+        view: str,
+        report_code: str,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+        hostility: Optional[int] = None,
+        by: Optional[str] = None,
+        sourceid: Optional[int] = None,
+        sourceinstance: Optional[int] = None,
+        sourceclass: Optional[str] = None,
+        targetid: Optional[int] = None,
+        targetinstance: Optional[int] = None,
+        targetclass: Optional[str] = None,
+        abilityid: Optional[int] = None,
+        options: Optional[int] = None,
+        cutoff: Optional[int] = None,
+        encounter: Optional[int] = None,
+        wipes: Optional[int] = None,
+        filter_exp: Optional[str] = None,
+        translate: Optional[bool] = None,
+        endpoint: str = "report/tables/:view/:report_code",
+    ) -> Union[Iterable[Dict], Dict[Any, Any]]:
         """
         Send a GET /report/tables request to the API, returns the report
         tables.
@@ -517,11 +526,11 @@ class WCLApi:
         except AttributeError:
             raise ValueError("Please initialise the Api class.")
 
-        headers = {}
+        headers: Dict[str, Union[str, int]] = {}
 
         endpoint = endpoint.replace(":view", view).replace(":report_code", report_code)
 
-        params = {}
+        params: Dict[str, Union[str, int]] = {}
 
         if start_time is not None:
             params.update({"start": start_time})
@@ -577,22 +586,22 @@ class WCLApi:
 
     def get_encounter_rankings(
         self,
-        encounter_id,
-        metric="speed",
-        size=None,
-        difficulty=None,
-        partition=None,
-        game_class=None,
-        spec=None,
-        bracket=None,
-        server=None,
-        region=None,
-        page=None,
-        limit=None,
-        filter=None,
-        include_combatant_info=False,
-        endpoint="rankings/encounter/:encounter_id",
-    ):
+        encounter_id: int,
+        metric: Optional[str] = "speed",
+        size: Optional[str] = None,
+        difficulty: Optional[str] = None,
+        partition: Optional[int] = None,
+        game_class: Optional[int] = None,
+        spec: Optional[int] = None,
+        bracket: Optional[int] = None,
+        server: Optional[str] = None,
+        region: Optional[str] = None,
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+        filter: Optional[str] = None,
+        include_combatant_info: Optional[bool] = False,
+        endpoint: str = "rankings/encounter/:encounter_id",
+    ) -> Union[Iterable[Dict], Dict]:
         """
         Send a GET /rankings/encounter request to the API, returns the
         encounter rankings.
@@ -661,11 +670,11 @@ class WCLApi:
         except AttributeError:
             raise ValueError("Please initialise the Api class.")
 
-        headers = {}
+        headers: Dict[str, Union[str, int]] = {}
 
         endpoint = endpoint.replace(":encounter_id", str(encounter_id))
 
-        params = {}
+        params: Dict[str, Union[str, int]] = {}
 
         if metric is not None:
             params.update({"metric": metric})
@@ -713,8 +722,7 @@ class WCLApi:
                 else:
                     cont = resp_json
 
-
-                if next_page:= resp_json["hasMorePages"]:
+                if next_page := resp_json["hasMorePages"]:
                     params.update({"page": resp_json["page"] + 1})
                     logger.debug(f"Additional page loaded: {resp_json['page'] + 1}")
             else:
@@ -722,10 +730,11 @@ class WCLApi:
 
         if resp:
             if resp.status_code == 200:
-                logger.debug(
-                    f"Content obtained successfully: {len(cont['rankings'])} rankings "
-                    "found"
-                )
+                if cont is not None:
+                    logger.debug(
+                        f"Content obtained successfully: {len(cont['rankings'])} "
+                        "rankings found"
+                    )
                 return cont
 
             if resp.status_code == 401:
@@ -737,7 +746,7 @@ class WCLApi:
             f" for endpoint: {endpoint}"
         )
 
-    def get_zones(self, endpoint=r"zones"):
+    def get_zones(self, endpoint: str = r"zones") -> Iterable[Dict]:
         """
         Send a /zones request to the API, returns the available zones.
 
@@ -757,12 +766,12 @@ class WCLApi:
         except AttributeError:
             raise ValueError("Please initialise the Api class.")
 
-        headers = {}
+        headers: Dict[str, Union[str, int]] = {}
 
         resp = None
         cont = None
 
-        params = {}
+        params: Dict[str, Union[str, int]] = {}
         params.update({"api_key": api_key})
 
         resp = self.http.get(endpoint, headers=headers, params=params)
@@ -780,7 +789,9 @@ class WCLApi:
             f" for endpoint: {endpoint}"
         )
 
-    def load_saved_query(self, query, argspec):
+    def load_saved_query(
+        self, query: str, argspec: inspect.ArgInfo
+    ) -> Union[Iterable[Dict], Dict, None]:
         if self.query_dir is None:
             return None
         f_name = self.make_file_name(argspec, query)
@@ -792,7 +803,9 @@ class WCLApi:
         with open(f_path, "r") as f:
             return json.load(f)
 
-    def save_query(self, query, argspec, cont):
+    def save_query(
+        self, query: str, argspec: inspect.ArgInfo, cont: Union[Iterable[Dict], Dict]
+    ) -> None:
         if self.query_dir is None:
             return None
         f_name = self.make_file_name(argspec, query)
@@ -802,7 +815,7 @@ class WCLApi:
         with open(f_path, "w") as f:
             json.dump(cont, f)
 
-    def make_file_name(self, argspec, query):
+    def make_file_name(self, argspec: inspect.ArgInfo, query: str) -> str:
         arg_str = "_".join(
             [argspec.locals["report_code"]]
             + [
